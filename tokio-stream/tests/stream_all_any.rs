@@ -1,5 +1,5 @@
 use tokio_stream::{self as stream, StreamExt};
-use tokio_test::{assert_pending, assert_ready, task};
+use tokio_test::{assert_ready, task};
 
 #[tokio::test]
 async fn all_empty_stream() {
