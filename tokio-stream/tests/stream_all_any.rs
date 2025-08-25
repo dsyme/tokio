@@ -63,18 +63,18 @@ async fn all_pending_stream() {
     // Test with a stream that can be pending
     let mut task = task::spawn(async {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        
+
         // Send some items
         tx.send(1).unwrap();
         tx.send(2).unwrap();
         tx.send(3).unwrap();
         drop(tx); // Close the stream
-        
+
         tokio_stream::wrappers::UnboundedReceiverStream::new(rx)
             .all(|x| x > 0)
             .await
     });
-    
+
     assert_ready!(task.poll());
 }
 
@@ -140,18 +140,18 @@ async fn any_pending_stream() {
     // Test with a stream that can be pending
     let mut task = task::spawn(async {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        
+
         // Send some items
         tx.send(-1).unwrap();
         tx.send(-2).unwrap();
         tx.send(3).unwrap();
         drop(tx); // Close the stream
-        
+
         tokio_stream::wrappers::UnboundedReceiverStream::new(rx)
             .any(|x| x > 0)
             .await
     });
-    
+
     assert_ready!(task.poll());
 }
 
@@ -159,11 +159,11 @@ async fn any_pending_stream() {
 async fn all_any_with_different_types() {
     // Test with string data
     let strings = vec!["hello", "world", "rust"];
-    
+
     // All strings have length > 2
     let all_result = stream::iter(strings.clone()).all(|s| s.len() > 2).await;
     assert!(all_result);
-    
+
     // Any string contains 'o'
     let any_result = stream::iter(strings).any(|s| s.contains('o')).await;
     assert!(any_result);
@@ -173,18 +173,22 @@ async fn all_any_with_different_types() {
 async fn all_any_mutation_in_closure() {
     // Test that the closure can mutate captured variables
     let mut counter = 0;
-    let result = stream::iter(vec![1, 2, 3]).all(|x| {
-        counter += x;
-        x > 0
-    }).await;
+    let result = stream::iter(vec![1, 2, 3])
+        .all(|x| {
+            counter += x;
+            x > 0
+        })
+        .await;
     assert!(result);
     assert_eq!(counter, 6);
-    
+
     counter = 0;
-    let result = stream::iter(vec![1, 2, 3]).any(|x| {
-        counter += x;
-        x > 2
-    }).await;
+    let result = stream::iter(vec![1, 2, 3])
+        .any(|x| {
+            counter += x;
+            x > 2
+        })
+        .await;
     assert!(result);
     assert_eq!(counter, 6); // 1 + 2 + 3, all items processed before finding match
 }
