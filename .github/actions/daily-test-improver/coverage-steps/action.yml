@@ -1,0 +1,61 @@
+name: 'Daily Test Coverage Improver - Coverage Steps'
+description: 'Build the project, run tests, and generate coverage reports for test improvement analysis'
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Rust stable
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+        components: llvm-tools-preview
+    
+    - name: Install cargo-nextest
+      uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-nextest
+    
+    - name: Install cargo-llvm-cov
+      uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-llvm-cov
+    
+    - uses: Swatinem/rust-cache@v2
+    
+    - name: Clean previous build artifacts
+      run: cargo clean
+      shell: bash
+    
+    - name: Build all crates in workspace
+      run: cargo build --workspace --all-features
+      shell: bash
+      env:
+        RUSTFLAGS: -Dwarnings
+    
+    - name: Run tests with coverage
+      run: |
+        set -euxo pipefail
+        # Run tests with coverage for the main tokio crate
+        cargo llvm-cov nextest --workspace --all-features --lcov --output-path coverage-tokio.lcov
+        # Generate HTML report for easy viewing
+        cargo llvm-cov report --html --output-dir coverage-html
+        # Generate text summary
+        cargo llvm-cov report --summary-only > coverage-summary.txt
+      shell: bash
+      env:
+        RUSTFLAGS: --cfg tokio_unstable -Dwarnings
+    
+    - name: Upload coverage reports as artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-reports
+        path: |
+          coverage-tokio.lcov
+          coverage-html/
+          coverage-summary.txt
+        retention-days: 30
+    
+    - name: Display coverage summary
+      run: |
+        echo "Coverage Summary:"
+        cat coverage-summary.txt
+      shell: bash
