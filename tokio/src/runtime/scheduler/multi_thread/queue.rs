@@ -405,6 +405,7 @@ impl<T> Steal<T> {
     }
 
     /// Steals half the tasks from self and place them into `dst`.
+    #[inline]
     pub(crate) fn steal_into(
         &self,
         dst: &mut Local<T>,
