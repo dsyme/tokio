@@ -4,10 +4,7 @@ use tokio_test::{assert_ready, task};
 // Tests for filter method
 #[tokio::test]
 async fn filter_empty_stream() {
-    let result: Vec<i32> = stream::empty::<i32>()
-        .filter(|&x| x > 0)
-        .collect()
-        .await;
+    let result: Vec<i32> = stream::empty::<i32>().filter(|&x| x > 0).collect().await;
     assert!(result.is_empty());
 }
 
@@ -80,20 +77,20 @@ async fn filter_with_strings() {
 async fn filter_pending_stream() {
     let mut task = task::spawn(async {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        
+
         // Send some items
         tx.send(1).unwrap();
         tx.send(-2).unwrap();
         tx.send(3).unwrap();
         tx.send(-4).unwrap();
         drop(tx); // Close the stream
-        
+
         tokio_stream::wrappers::UnboundedReceiverStream::new(rx)
             .filter(|&x| x > 0)
             .collect::<Vec<_>>()
             .await
     });
-    
+
     let result = assert_ready!(task.poll());
     assert_eq!(result, vec![1, 3]);
 }
@@ -138,7 +135,13 @@ async fn filter_map_mixed() {
 #[tokio::test]
 async fn filter_map_type_conversion() {
     let result: Vec<String> = stream::iter(vec![1, 2, 3, 4, 5])
-        .filter_map(|x| if x % 2 == 0 { Some(format!("even{}", x)) } else { None })
+        .filter_map(|x| {
+            if x % 2 == 0 {
+                Some(format!("even{}", x))
+            } else {
+                None
+            }
+        })
         .collect()
         .await;
     assert_eq!(result, vec!["even2", "even4"]);
@@ -159,7 +162,11 @@ async fn filter_map_with_mutation() {
     let result: Vec<i32> = stream::iter(vec![1, 2, 3, 4, 5])
         .filter_map(|x| {
             counter += 1;
-            if x % 2 == 0 { Some(x * 3) } else { None }
+            if x % 2 == 0 {
+                Some(x * 3)
+            } else {
+                None
+            }
         })
         .collect()
         .await;
@@ -169,16 +176,15 @@ async fn filter_map_with_mutation() {
 
 #[tokio::test]
 async fn filter_map_debug_format() {
-    let filter_map_stream = stream::iter(vec![1, 2, 3])
-        .filter_map(|x| Some(x * 2));
+    let filter_map_stream = stream::iter(vec![1, 2, 3]).filter_map(|x| Some(x * 2));
     let debug_str = format!("{:?}", filter_map_stream);
     assert!(debug_str.contains("FilterMap"));
 }
 
 #[tokio::test]
 async fn filter_map_size_hint() {
-    let filter_map_stream = stream::iter(vec![1, 2, 3, 4, 5])
-        .filter_map(|x| if x > 0 { Some(x) } else { None });
+    let filter_map_stream =
+        stream::iter(vec![1, 2, 3, 4, 5]).filter_map(|x| if x > 0 { Some(x) } else { None });
     let (lower, upper) = filter_map_stream.size_hint();
     assert_eq!(lower, 0); // Can't know lower bound due to filtering
     assert_eq!(upper, Some(5)); // Upper bound is from original stream
@@ -188,20 +194,20 @@ async fn filter_map_size_hint() {
 async fn filter_map_pending_stream() {
     let mut task = task::spawn(async {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        
+
         // Send some items
         tx.send(1).unwrap();
         tx.send(2).unwrap();
         tx.send(3).unwrap();
         tx.send(4).unwrap();
         drop(tx); // Close the stream
-        
+
         tokio_stream::wrappers::UnboundedReceiverStream::new(rx)
             .filter_map(|x| if x % 2 == 0 { Some(x * 10) } else { None })
             .collect::<Vec<_>>()
             .await
     });
-    
+
     let result = assert_ready!(task.poll());
     assert_eq!(result, vec![20, 40]);
 }
@@ -221,7 +227,7 @@ async fn filter_chaining() {
     // Test chaining filter operations
     let result: Vec<i32> = stream::iter(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
         .filter(|&x| x % 2 == 0) // Even numbers: 2, 4, 6, 8, 10
-        .filter(|&x| x > 5)      // Greater than 5: 6, 8, 10
+        .filter(|&x| x > 5) // Greater than 5: 6, 8, 10
         .collect()
         .await;
     assert_eq!(result, vec![6, 8, 10]);
@@ -232,7 +238,13 @@ async fn filter_map_chaining() {
     // Test chaining filter_map operations
     let result: Vec<String> = stream::iter(vec![1, 2, 3, 4, 5, 6])
         .filter_map(|x| if x % 2 == 0 { Some(x) } else { None }) // Even: 2, 4, 6
-        .filter_map(|x| if x > 3 { Some(format!("num_{}", x)) } else { None }) // >3: 4, 6
+        .filter_map(|x| {
+            if x > 3 {
+                Some(format!("num_{}", x))
+            } else {
+                None
+            }
+        }) // >3: 4, 6
         .collect()
         .await;
     assert_eq!(result, vec!["num_4", "num_6"]);
@@ -242,8 +254,14 @@ async fn filter_map_chaining() {
 async fn filter_and_filter_map_combination() {
     // Test combining filter and filter_map
     let result: Vec<String> = stream::iter(vec![-2, -1, 0, 1, 2, 3, 4, 5])
-        .filter(|&x| x > 0)                                    // Positive: 1, 2, 3, 4, 5
-        .filter_map(|x| if x % 2 == 1 { Some(format!("odd_{}", x)) } else { None }) // Odd: 1, 3, 5
+        .filter(|&x| x > 0) // Positive: 1, 2, 3, 4, 5
+        .filter_map(|x| {
+            if x % 2 == 1 {
+                Some(format!("odd_{}", x))
+            } else {
+                None
+            }
+        }) // Odd: 1, 3, 5
         .collect()
         .await;
     assert_eq!(result, vec!["odd_1", "odd_3", "odd_5"]);
