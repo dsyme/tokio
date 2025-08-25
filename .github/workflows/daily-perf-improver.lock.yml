@@ -2,7 +2,7 @@
 # To update this file, edit the corresponding .md file and run:
 #   gh aw compile
 #
-# Effective stop-time: 2025-08-27 15:39:04
+# Effective stop-time: 2025-08-27 16:43:41
 
 name: "Daily Perf Improver"
 on:
@@ -97,7 +97,7 @@ jobs:
           WORKFLOW_NAME="Daily Perf Improver"
           
           # Check stop-time limit
-          STOP_TIME="2025-08-27 15:39:04"
+          STOP_TIME="2025-08-27 16:43:41"
           echo "Checking stop-time limit: $STOP_TIME"
           
           # Convert stop time to epoch seconds
@@ -216,7 +216,7 @@ jobs:
                - Benchmarking should be done in a way that is reliable and reproducible, though beware that because you're running in a virtualised environment wall-clock-time measurements may not be 100% accurate.
                - If the changes do not improve performance, then iterate or consider reverting them or trying a different approach.
           
-          5. If you succeeded in writing useful code changes that improve performance, create a draft pull request with your changes:
+          5. If you succeeded in writing useful code changes that improve performance, create a draft pull request with your changes. Use `push_files` to push the changes, then use `create_pull_request` to create the pull request.
           
              5a. Include a description of the improvements, details of the benchmark runs that show improvement and by how much, made and any relevant context.
              

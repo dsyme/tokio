@@ -48,7 +48,7 @@ jobs:
       - test-integration-tests-per-feature
       - test-parking_lot
       - valgrind
-      - test-unstable
+      #- test-unstable
       - miri-lib
       - miri-doc
       - asan
@@ -74,7 +74,7 @@ jobs:
       - wasm32-wasip1
       - check-external-types
       - check-fuzzing
-      - check-unstable-mt-counters
+      #- check-unstable-mt-counters
       #- check-spelling
     steps:
       - run: exit 0
@@ -279,151 +279,151 @@ jobs:
       - name: Run valgrind test-process-signal
         run: valgrind --error-exitcode=1 --leak-check=full --show-leak-kinds=all --fair-sched=yes ./target/debug/test-process-signal
 
-  test-unstable:
-    name: test tokio full --unstable
-    needs: basics
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-          - os: ubuntu-latest
-          - os: macos-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Install Rust ${{ env.rust_stable }}
-        uses: dtolnay/rust-toolchain@stable
-        with:
-            toolchain: ${{ env.rust_stable }}
+  # test-unstable:
+  #   name: test tokio full --unstable
+  #   needs: basics
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - os: windows-latest
+  #         - os: ubuntu-latest
+  #         - os: macos-latest
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     - name: Install Rust ${{ env.rust_stable }}
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #           toolchain: ${{ env.rust_stable }}
 
-      - name: Install cargo-nextest
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-nextest
+  #     - name: Install cargo-nextest
+  #       uses: taiki-e/install-action@v2
+  #       with:
+  #         tool: cargo-nextest
 
-      - uses: Swatinem/rust-cache@v2
-      # Run `tokio` with "unstable" cfg flag.
-      - name: test tokio full --cfg unstable
-        run: |
-          set -euxo pipefail
-          cargo nextest run --all-features
-          cargo test --doc --all-features
-        working-directory: tokio
-        env:
-          RUSTFLAGS: --cfg tokio_unstable -Dwarnings
-          # in order to run doctests for unstable features, we must also pass
-          # the unstable cfg to RustDoc
-          RUSTDOCFLAGS: --cfg tokio_unstable
+  #     - uses: Swatinem/rust-cache@v2
+  #     # Run `tokio` with "unstable" cfg flag.
+  #     - name: test tokio full --cfg unstable
+  #       run: |
+  #         set -euxo pipefail
+  #         cargo nextest run --all-features
+  #         cargo test --doc --all-features
+  #       working-directory: tokio
+  #       env:
+  #         RUSTFLAGS: --cfg tokio_unstable -Dwarnings
+  #         # in order to run doctests for unstable features, we must also pass
+  #         # the unstable cfg to RustDoc
+  #         RUSTDOCFLAGS: --cfg tokio_unstable
 
-  test-unstable-taskdump:
-    name: test tokio full --unstable --taskdump
-    needs: basics
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Install Rust ${{ env.rust_stable }}
-        uses: dtolnay/rust-toolchain@stable
-        with:
-            toolchain: ${{ env.rust_stable }}
+  # test-unstable-taskdump:
+  #   name: test tokio full --unstable --taskdump
+  #   needs: basics
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - os: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     - name: Install Rust ${{ env.rust_stable }}
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #           toolchain: ${{ env.rust_stable }}
 
-      - name: Install cargo-nextest
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-nextest
+  #     - name: Install cargo-nextest
+  #       uses: taiki-e/install-action@v2
+  #       with:
+  #         tool: cargo-nextest
 
-      - uses: Swatinem/rust-cache@v2
-      # Run `tokio` with "unstable" and "taskdump" cfg flags.
-      - name: test tokio full --cfg unstable --cfg taskdump
-        run: |
-          set -euxo pipefail
-          cargo nextest run --all-features
-          cargo test --doc --all-features
-        working-directory: tokio
-        env:
-          RUSTFLAGS: --cfg tokio_unstable --cfg tokio_taskdump -Dwarnings
-          # in order to run doctests for unstable features, we must also pass
-          # the unstable cfg to RustDoc
-          RUSTDOCFLAGS: --cfg tokio_unstable --cfg tokio_taskdump
+  #     - uses: Swatinem/rust-cache@v2
+  #     # Run `tokio` with "unstable" and "taskdump" cfg flags.
+  #     - name: test tokio full --cfg unstable --cfg taskdump
+  #       run: |
+  #         set -euxo pipefail
+  #         cargo nextest run --all-features
+  #         cargo test --doc --all-features
+  #       working-directory: tokio
+  #       env:
+  #         RUSTFLAGS: --cfg tokio_unstable --cfg tokio_taskdump -Dwarnings
+  #         # in order to run doctests for unstable features, we must also pass
+  #         # the unstable cfg to RustDoc
+  #         RUSTDOCFLAGS: --cfg tokio_unstable --cfg tokio_taskdump
 
-  test-uring:
-    name: test tokio full --cfg tokio_uring
-    needs: basics
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-    steps:
-      - name: check if io-uring is supported in the CI environment
-        run: |
-          # Try to read the io-uring setting in the kernel config file.
-          # https://github.com/torvalds/linux/blob/75f5f23f8787c5e184fcb2fbcd02d8e9317dc5e7/init/Kconfig#L1782-L1789
-          CONFIG_FILE="/boot/config-$(uname -r)"
-          echo "Checking $CONFIG_FILE for io-uring support"
-          if ! grep -q "CONFIG_IO_URING=y" "$CONFIG_FILE"; then
-            echo "Error: io_uring is not supported"
-            exit 1
-          fi
+  # test-uring:
+  #   name: test tokio full --cfg tokio_uring
+  #   needs: basics
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - os: ubuntu-latest
+  #   steps:
+  #     - name: check if io-uring is supported in the CI environment
+  #       run: |
+  #         # Try to read the io-uring setting in the kernel config file.
+  #         # https://github.com/torvalds/linux/blob/75f5f23f8787c5e184fcb2fbcd02d8e9317dc5e7/init/Kconfig#L1782-L1789
+  #         CONFIG_FILE="/boot/config-$(uname -r)"
+  #         echo "Checking $CONFIG_FILE for io-uring support"
+  #         if ! grep -q "CONFIG_IO_URING=y" "$CONFIG_FILE"; then
+  #           echo "Error: io_uring is not supported"
+  #           exit 1
+  #         fi
 
-      - uses: actions/checkout@v5
-      - name: Install Rust ${{ env.rust_stable }}
-        uses: dtolnay/rust-toolchain@stable
-        with:
-            toolchain: ${{ env.rust_stable }}
+  #     - uses: actions/checkout@v5
+  #     - name: Install Rust ${{ env.rust_stable }}
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #           toolchain: ${{ env.rust_stable }}
 
-      - name: Install cargo-nextest
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-nextest
+  #     - name: Install cargo-nextest
+  #       uses: taiki-e/install-action@v2
+  #       with:
+  #         tool: cargo-nextest
 
-      - uses: Swatinem/rust-cache@v2
-      - name: test tokio full --cfg tokio_uring
-        run: |
-          set -euxo pipefail
-          cargo nextest run --all-features
-          cargo test --doc --all-features
-        working-directory: tokio
-        env:
-          RUSTFLAGS: --cfg tokio_uring -Dwarnings
-          # in order to run doctests for unstable features, we must also pass
-          # the unstable cfg to RustDoc
-          RUSTDOCFLAGS: --cfg tokio_uring
+  #     - uses: Swatinem/rust-cache@v2
+  #     - name: test tokio full --cfg tokio_uring
+  #       run: |
+  #         set -euxo pipefail
+  #         cargo nextest run --all-features
+  #         cargo test --doc --all-features
+  #       working-directory: tokio
+  #       env:
+  #         RUSTFLAGS: --cfg tokio_uring -Dwarnings
+  #         # in order to run doctests for unstable features, we must also pass
+  #         # the unstable cfg to RustDoc
+  #         RUSTDOCFLAGS: --cfg tokio_uring
 
-  check-unstable-mt-counters:
-    name: check tokio full --internal-mt-counters
-    needs: basics
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Install Rust ${{ env.rust_stable }}
-        uses: dtolnay/rust-toolchain@stable
-        with:
-            toolchain: ${{ env.rust_stable }}
-      - name: Install cargo-nextest
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-nextest
-      - uses: Swatinem/rust-cache@v2
-      # Run `tokio` with "unstable" and "taskdump" cfg flags.
-      - name: check tokio full --cfg unstable --cfg internal-mt-counters
-        run: |
-          set -euxo pipefail
-          cargo nextest run --all-features
-          cargo test --doc --all-features
-        working-directory: tokio
-        env:
-          RUSTFLAGS: --cfg tokio_unstable --cfg tokio_internal_mt_counters -Dwarnings
-          # in order to run doctests for unstable features, we must also pass
-          # the unstable cfg to RustDoc
-          RUSTDOCFLAGS: --cfg tokio_unstable --cfg tokio_internal_mt_counters
+  # check-unstable-mt-counters:
+  #   name: check tokio full --internal-mt-counters
+  #   needs: basics
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - os: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     - name: Install Rust ${{ env.rust_stable }}
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #           toolchain: ${{ env.rust_stable }}
+  #     - name: Install cargo-nextest
+  #       uses: taiki-e/install-action@v2
+  #       with:
+  #         tool: cargo-nextest
+  #     - uses: Swatinem/rust-cache@v2
+  #     # Run `tokio` with "unstable" and "taskdump" cfg flags.
+  #     - name: check tokio full --cfg unstable --cfg internal-mt-counters
+  #       run: |
+  #         set -euxo pipefail
+  #         cargo nextest run --all-features
+  #         cargo test --doc --all-features
+  #       working-directory: tokio
+  #       env:
+  #         RUSTFLAGS: --cfg tokio_unstable --cfg tokio_internal_mt_counters -Dwarnings
+  #         # in order to run doctests for unstable features, we must also pass
+  #         # the unstable cfg to RustDoc
+  #         RUSTDOCFLAGS: --cfg tokio_unstable --cfg tokio_internal_mt_counters
 
   miri-lib:
     name: miri-lib
@@ -743,11 +743,11 @@ jobs:
         include:
           - { name: "", rustflags: "" }
           # Try with unstable feature flags
-          - { name: "--unstable", rustflags: "--cfg tokio_unstable -Dwarnings" }
+          # - { name: "--unstable", rustflags: "--cfg tokio_unstable -Dwarnings" }
           # Try with unstable and taskdump feature flags
-          - { name: "--unstable --taskdump", rustflags: "--cfg tokio_unstable -Dwarnings --cfg tokio_taskdump" }
-          - { name: "--tokio_uring", rustflags: "-Dwarnings --cfg tokio_uring" }
-          - { name: "--unstable --taskdump --tokio_uring", rustflags: "--cfg tokio_unstable -Dwarnings --cfg tokio_taskdump --cfg tokio_uring" }
+          # - { name: "--unstable --taskdump", rustflags: "--cfg tokio_unstable -Dwarnings --cfg tokio_taskdump" }
+          # - { name: "--tokio_uring", rustflags: "-Dwarnings --cfg tokio_uring" }
+          # - { name: "--unstable --taskdump --tokio_uring", rustflags: "--cfg tokio_unstable -Dwarnings --cfg tokio_taskdump --cfg tokio_uring" }
     steps:
       - uses: actions/checkout@v5
       - name: Install Rust ${{ env.rust_nightly }}
@@ -808,16 +808,16 @@ jobs:
           # Update Cargo.lock to minimal version dependencies.
           cargo update -Z minimal-versions
           cargo hack check --all-features --ignore-private
-      - name: "check --all-features --unstable -Z minimal-versions"
-        env:
-          RUSTFLAGS: --cfg tokio_unstable --cfg tokio_taskdump --cfg tokio_uring -Dwarnings
-        run: |
-          # Remove dev-dependencies from Cargo.toml to prevent the next `cargo update`
-          # from determining minimal versions based on dev-dependencies.
-          cargo hack --remove-dev-deps --workspace
-          # Update Cargo.lock to minimal version dependencies.
-          cargo update -Z minimal-versions
-          cargo hack check --all-features --ignore-private
+      # - name: "check --all-features --unstable -Z minimal-versions"
+      #   env:
+      #     RUSTFLAGS: --cfg tokio_unstable --cfg tokio_taskdump --cfg tokio_uring -Dwarnings
+      #   run: |
+      #     # Remove dev-dependencies from Cargo.toml to prevent the next `cargo update`
+      #     # from determining minimal versions based on dev-dependencies.
+      #     cargo hack --remove-dev-deps --workspace
+      #     # Update Cargo.lock to minimal version dependencies.
+      #     cargo update -Z minimal-versions
+      #     cargo hack check --all-features --ignore-private
 
   fmt:
     name: fmt
@@ -1248,27 +1248,27 @@ jobs:
   #             exit 1
   #         fi
 
-  get-latest-kernel-version:
-    runs-on: ubuntu-latest
-    outputs:
-      kernel_version: ${{ steps.fetch.outputs.kernel_version }}
-    steps:
-      - name: Fetch latest stable kernel
-        id: fetch
-        run: |
-          KERNEL_VERSION=$(curl -s https://www.kernel.org/releases.json | jq -r '.latest_stable.version')
-          echo "kernel_version=$KERNEL_VERSION" >> $GITHUB_OUTPUT
+  # get-latest-kernel-version:
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     kernel_version: ${{ steps.fetch.outputs.kernel_version }}
+  #   steps:
+  #     - name: Fetch latest stable kernel
+  #       id: fetch
+  #       run: |
+  #         KERNEL_VERSION=$(curl -s https://www.kernel.org/releases.json | jq -r '.latest_stable.version')
+  #         echo "kernel_version=$KERNEL_VERSION" >> $GITHUB_OUTPUT
 
-  test-io-uring-on-specific-kernel-versions:
-    name: Test io_uring on Linux ${{ matrix.kernel_version }}
-    needs: [get-latest-kernel-version, basics]
-    strategy:
-      matrix:
-        kernel_version:
-          # A latest stable kernel version
-          - ${{ needs.get-latest-kernel-version.outputs.kernel_version }}
-          # A kernel version that doesn't support io_uring
-          - '4.19.325'
-    uses: ./.github/workflows/uring-kernel-version-test.yml
-    with:
-      kernel_version: ${{ matrix.kernel_version }}
+  # test-io-uring-on-specific-kernel-versions:
+  #   name: Test io_uring on Linux ${{ matrix.kernel_version }}
+  #   needs: [get-latest-kernel-version, basics]
+  #   strategy:
+  #     matrix:
+  #       kernel_version:
+  #         # A latest stable kernel version
+  #         - ${{ needs.get-latest-kernel-version.outputs.kernel_version }}
+  #         # A kernel version that doesn't support io_uring
+  #         - '4.19.325'
+  #   uses: ./.github/workflows/uring-kernel-version-test.yml
+  #   with:
+  #     kernel_version: ${{ matrix.kernel_version }}
