@@ -9,7 +9,7 @@ on:
     - completed
     workflows:
     - Daily Perf Improver
-    - Daily Test Improver
+    - Daily Test Coverage Improver
 
 permissions: {}
 
