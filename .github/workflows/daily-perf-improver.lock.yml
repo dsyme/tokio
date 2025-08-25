@@ -4,7 +4,7 @@
 #
 # Effective stop-time: 2025-08-27 15:39:04
 
-name: "Daily Test Coverage Improver"
+name: "Daily Perf Improver"
 on:
   schedule:
   - cron: 0 2 * * 1-5
@@ -15,10 +15,10 @@ permissions: {}
 concurrency:
   group: "gh-aw-${{ github.workflow }}"
 
-run-name: "Daily Test Coverage Improver"
+run-name: "Daily Perf Improver"
 
 jobs:
-  daily-test-coverage-improver:
+  daily-perf-improver:
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -35,7 +35,7 @@ jobs:
       - id: check_build_steps_file
         name: Check if action.yml exists
         run: |
-          if [ -f ".github/actions/daily-test-improver/coverage-steps/action.yml" ]; then
+          if [ -f ".github/actions/daily-perf-improver/build-steps/action.yml" ]; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
@@ -43,8 +43,8 @@ jobs:
         shell: bash
       - id: build-steps
         if: steps.check_build_steps_file.outputs.exists == 'true'
-        name: Build the project and produce coverage report
-        uses: ./.github/actions/daily-test-improver/coverage-steps
+        name: Build the project ready for performance testing
+        uses: ./.github/actions/daily-perf-improver/build-steps
       - name: Setup agent output
         id: setup_agent_output
         uses: actions/github-script@v7
@@ -94,7 +94,7 @@ jobs:
         run: |
           set -e
           echo "Performing safety checks before executing agentic tools..."
-          WORKFLOW_NAME="Daily Test Coverage Improver"
+          WORKFLOW_NAME="Daily Perf Improver"
           
           # Check stop-time limit
           STOP_TIME="2025-08-27 15:39:04"
@@ -125,73 +125,127 @@ jobs:
         run: |
           mkdir -p /tmp/aw-prompts
           cat > /tmp/aw-prompts/prompt.txt << 'EOF'
-          # Daily Test Coverage Improver
+          # Daily Perf Improver
           
           ## Job Description
           
           Your name is ${{ github.workflow }}. Your job is to act as an agentic coder for the GitHub repository `${{ github.repository }}`. You're really good at all kinds of tasks. You're excellent at everything.
           
-          1. Build steps configuration.
+          1. Performance research (if not done before).
           
-             1a. Check if `.github/actions/daily-test-improver/coverage-steps/action.yml` exists in this repo. Note this path is relative to the current directory (the root of the repo). If it exists then continue to step 2. If it doesn't then we need to create it:
+             1a. Check if an open issue with title "${{ github.workflow }}: Research and Plan" exists. If it does, read the issue and its comments, paying particular attention to comment from repository maintainers, then continue to step 2. If not, follow the steps below to create it:
+          
+             1b. Do some deep research into performance matters in this repo.
+               - How is performance testing is done in the repo?
+               - How to do micro benchmarks in the repo?
+               - What are typical workloads for the software in this repo?
+               - Where are performance bottlenecks?
+               - Is perf I/O, CPU or Storage bound?
+               - What do the repo maintainers care about most w.r.t. perf.?
+               - What are realistic goals for Round 1, 2, 3 of perf improvement?
+               - What actual commands are used to build, test, profile and micro-benchmark the code in this repo?
+               - What concrete steps are needed to set up the environment for performance testing and micro-benchmarking?
+               - What existing documentation is there about performance in this repo?
+               - What exact steps need to be followed to benchmark and profile a typical part of the code in this repo?
+          
+               Research:
+               - Functions or methods that are slow
+               - Algorithms that can be optimized
+               - Data structures that can be made more efficient
+               - Code that can be refactored for better performance
+               - Important routines that dominate performance
+               - Code that can be vectorized or other standard techniques to improve performance
+               - Any other areas that you identify as potential performance bottlenecks
+               - CPU, memory, I/O or other bottlenecks
+          
+               Consider perf engineering fundamentals:
+               - You want to get to a zone where the engineers can run commands to get numbers towards some performance goal - with commands running reliably within 1min or so - and it can "see" the code paths associated with that. If you can achieve that, your engineers will be very good at finding low-hanging fruit to work towards the performance goals.
+          
+               1b. Use this research to write an issue with title "${{ github.workflow }}: Research and Plan", then exit this entire workflow.
+          
+          2. Generate build steps configuration (if not done before). 
+          
+             2a. Check if `.github/actions/daily-perf-improver/build-steps/action.yml` exists in this repo. Note this path is relative to the current directory (the root of the repo). If this file exists, it will have been run already as part of the GitHub Action you are executing in, so read the file to understand what has already been run and continue to step 3. Otherwise continue to step 2b.
+          
+             2b. Check if an open pull request with title "${{ github.workflow }}: Updates to complete configuration" exists in this repo. If it does, add a comment to the pull request saying configuration needs to be completed, then exit the workflow. Otherwise continue to step 2c.
+          
+             2c. Have a careful think about the CI commands needed to build the project and set up the environment for individual performance development work, assuming one set of build assumptions and one architecture (the one running). Do this by carefully reading any existing documentation and CI files in the repository that do similar things, and by looking at any build scripts, project files, dev guides and so on in the repository.
+          
+             2d. Create the file `.github/actions/daily-perf-improver/build-steps/action.yml` as a GitHub Action containing these steps, ensuring that the action.yml file is valid and carefully cross-checking with other CI files and devcontainer configurations in the repo to ensure accuracy and correctness.
+          
+             2e. Make a pull request for the addition of this file, with title "${{ github.workflow }}: Updates to complete configuration". Explain that adding these files to the repo will make this workflow more reliable and effective. Encourage the maintainer to review the files carefully to ensure they are appropriate for the project. Exit the entire workflow.
+          
+          3. Performance goal selection: build an understanding of what to work on and select a part of the performance plan to pursue.
+          
+             3a. You can now assume the repository is in a state where the steps in `.github/actions/daily-perf-improver/build-steps/action.yml` have been run and is ready for performance testing, running micro-benchmarks etc. Read this file to understand what has been done.
+          
+             3b. Read the plan in the issue mentioned earlier, along with comments.
+          
+             3c. Check any existing open pull requests that are related to performance improvements especially any opened by you starting with title "${{ github.workflow }}".
              
-             1b. Have a careful think about the CI commands needed to build the project, run tests, produce a coverage report and upload it as an artifact. Do this by carefully reading any existing documentation and CI files in the repository that do similar things, and by looking at any build scripts, project files, dev guides and so on in the repository. 
+             3d. If you think the plan is inadequate, and needs a refresh, update the planning issue by rewriting the actual body of the issue, ensuring you take into account any comments from maintainers. Add one single comment to the issue saying nothing but the plan has been updated with a one sentence explanation about why. Do not add comments to the issue, just update the body. Then continue to step 3e.
+            
+             3e. Select a performance improvement goal to pursue from the plan. Ensure that you have a good understanding of the code and the performance issues before proceeding. Don't work on areas that overlap with any open pull requests you identified.
           
-             1c. Create the file `.github/actions/daily-test-improver/coverage-steps/action.yml` containing these steps, ensuring that the action.yml file is valid.
+          4. Work towards your selected goal.. For the performance improvement goal you selected, do the following:
           
-             1d. Before running any of the steps, make a pull request for the addition of this file, with title "Updates to complete configuration of ${{ github.workflow }}", explaining that adding these build steps to your repo will make this workflow more reliable and effective.
+             4a. Create a new branch.
              
-             1e. Try to run through the steps you worked out manually one by one. If the a step needs updating, then update the pull request you created in step 1d. Continue through all the steps. If you can't get it to work, then create an issue describing the problem and exit the entire workflow.
+             4b. Make the changes to work towards the performance improvement goal you selected. This may involve:
+               - Refactoring code
+               - Optimizing algorithms
+               - Changing data structures
+               - Adding caching
+               - Parallelizing code
+               - Improving memory access patterns
+               - Using more efficient libraries or frameworks
+               - Reducing I/O operations
+               - Reducing network calls
+               - Improving concurrency
+               - Using profiling tools to identify bottlenecks
+               - Improving engineering practices
+               - Other techniques to improve performance 
+          
+             4c. Ensure the code still works as expected and that any existing relevant tests pass. 
+          
+             4d. After making the changes, if appropriate measure their impact on performance.
              
-             1f. Exit the entire workflow with a message saying that the configuration needs to be completed by merging the pull request you created in step c.
+               - Get actual performance numbers
+               - If you can't successfully measure the performance impact, then continue but make a note of what you tried.
+               - Run individual benchmarks and comparing results.
+               - Benchmarking should be done in a way that is reliable and reproducible, though beware that because you're running in a virtualised environment wall-clock-time measurements may not be 100% accurate.
+               - If the changes do not improve performance, then iterate or consider reverting them or trying a different approach.
           
-          2. Decide what to work on.
+          5. If you succeeded in writing useful code changes that improve performance, create a draft pull request with your changes:
           
-             2a. You can assume that the repository is in a state where the steps in `.github/actions/daily-test-improver/coverage-steps/action.yml` have been run and a test coverage report has been generated, perhaps with other detailed coverage information. Look at the steps in `.github/actions/daily-test-improver/coverage-steps/action.yml` to work out where the coverage report should be, and find it. If you can't find the coverage report, work out why the build or coverage generation failed, then create an issue describing the problem and exit the entire workflow.
-          
-             2b. Read the coverge report. Be detailed, looking to understand the files, functions, branches, and lines of code that are not covered by tests. Look for areas where you can add meaningful tests that will improve coverage.
+             5a. Include a description of the improvements, details of the benchmark runs that show improvement and by how much, made and any relevant context.
              
-             2c. Check the most recent pull request with title starting with "${{ github.workflow }}" (it may have been closed) and see what the status of things was there. These are your notes from last time you did your work, and may include useful recommendations for future areas to work on.
+             5b. Do NOT include performance reports or any tool-generated files in the pull request. Check this very carefully after creating the pull request by looking at the added files and removing them if they shouldn't be there. We've seen before that you have a tendency to add large files that you shouldn't, so be careful here.
           
-             2d. Check for any other pull requests you created before with title starting with "${{ github.workflow }}. Don't work on adding any tests that overlap with what was done there.
-          
-             2e. Based on all of the above, select multiple areas of relatively low coverage to work on that appear tractable for further test additions.
-          
-          3. For each area identified, do the following:
-          
-             3a. Create a new branch
+             5c. In the description, explain:
              
-             3b. Write new tests to improve coverage. Ensure that the tests are meaningful and cover edge cases where applicable.
+             - the performance improvement goal you decided to pursue and why
+             - the approach you took to your work, including your todo list
+             - the actions you took
+             - the build, test, benchmarking and other steps you used
+             - the performance measurements you made 
+             - the measured improvements achieved
+             - the problems you found
+             - the changes made
+             - what did and didn't work
+             - possible other areas for future improvement
+             - include links to any issues you created or commented on, and any pull requests you created.
+             - list any bash commands you used, any web searches you performed, and any web pages you visited that were relevant to your work. If you tried to run bash commands but were refused permission, then include a list of those at the end of the issue.
           
-             3c. Build the tests if necessary and remove any build errors.
-             
-             3d. Run the new tests to ensure they pass.
+             5d. Add a very brief comment to the issue from step 1a if it exists, saying you have worked on the particular performance goal and linking to the pull request you created.
           
-             3e. Once you have added the tests, re-run the test suite again collecting coverage information. Check that overall coverage has improved. If coverage has not improved then exit.
+          6. If you didn't succeed in improving performance, create an issue with title starting with "${{ github.workflow }}", summarizing similar information to above.
           
-             3f. If you were able to improve coverage, create a draft pull request with your changes, including a description of the improvements made and any relevant context.
-             - Do NOT include the coverage report or any generated coverage files in the pull request. Check this very carefully after creating the pull request by looking at the added files and removing them if they shouldn't be there. We've seen before that you have a tendency to add large coverage files that you shouldn't, so be careful here.
-             - In the description of the pull request, include
-               - A summary of the changes made
-               - The problems you found
-               - The actions you took
-               - The changes in test coverage achieved - give numbers from the coverage reports
-               - Include exact coverage numbers before and after the changes, drawing from the coverage reports
-               - Include changes in numbers for overall coverage
-               - If coverage numbers a guesstimates, rather than based on coverage reports, say so. Don't blag, be honest. Include the exact commands the user will need to run to validate accurate coverage numbers.
-               - List possible other areas for future improvement
-               - In a collapsed section list
-                 - all bash commands you ran
-                 - all web searches you performed
-                 - all web pages you fetched 
+          7. If you encounter any unexpected failures or have questions, add comments to the pull request or issue to seek clarification or assistance.
           
-             If you were unable to improve coverage in a particular area, create an issue explaining why and what you tried. If you have any relevant links or resources, include those as well.
+          8. If you are unable to improve performance in a particular area, add a comment explaining why and what you tried. If you have any relevant links or resources, include those as well.
           
-          4. If you think you found bugs in the code while adding tests, create one single combined issue for all of them. Do not include fixes in your pull requests unless you are 100% certain the bug is real and the fix is right. Ideally you will also add a test case and prove the test case passes. If you find existing issues that are relevant, add comments to them instead of creating new issues.
-          
-          5. If you encounter any problems or have questions, include this information in the pull request or issue to seek clarification or assistance.
-          
-          6. Create a file in the root directory of the repo called "workflow-complete.txt" with the text "Workflow completed successfully".
+          9. Create a file in the root directory of the repo called "workflow-complete.txt" with the text "Workflow completed successfully".
           
           > NOTE: Never make direct pushes to the default (main) branch. Always create a pull request. The default (main) branch is protected and you will not be able to push to it.
           
@@ -280,7 +334,7 @@ jobs:
               engine_name: "Claude Code",
               model: "",
               version: "",
-              workflow_name: "Daily Test Coverage Improver",
+              workflow_name: "Daily Perf Improver",
               experimental: false,
               supports_tools_whitelist: true,
               supports_http_transport: true,
@@ -393,13 +447,13 @@ jobs:
         run: |
           # Copy the detailed execution file from Agentic Action if available
           if [ -n "${{ steps.agentic_execution.outputs.execution_file }}" ] && [ -f "${{ steps.agentic_execution.outputs.execution_file }}" ]; then
-            cp ${{ steps.agentic_execution.outputs.execution_file }} /tmp/daily-test-coverage-improver.log
+            cp ${{ steps.agentic_execution.outputs.execution_file }} /tmp/daily-perf-improver.log
           else
-            echo "No execution file output found from Agentic Action" >> /tmp/daily-test-coverage-improver.log
+            echo "No execution file output found from Agentic Action" >> /tmp/daily-perf-improver.log
           fi
           
           # Ensure log file exists
-          touch /tmp/daily-test-coverage-improver.log
+          touch /tmp/daily-perf-improver.log
       - name: Check if workflow-complete.txt exists, if so upload it
         id: check_file
         run: |
@@ -574,8 +628,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: daily-test-coverage-improver.log
-          path: /tmp/daily-test-coverage-improver.log
+          name: daily-perf-improver.log
+          path: /tmp/daily-perf-improver.log
           if-no-files-found: warn
       - name: Generate git patch
         if: always()
