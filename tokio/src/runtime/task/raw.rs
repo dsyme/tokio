@@ -49,6 +49,7 @@ pub(super) struct Vtable {
 }
 
 /// Get the vtable for the requested `T` and `S` generics.
+#[inline]
 pub(super) fn vtable<T: Future, S: Schedule>() -> &'static Vtable {
     &Vtable {
         poll: poll::<T, S>,

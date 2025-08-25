@@ -185,6 +185,7 @@ impl Handle {
     /// # }
     /// ```
     #[track_caller]
+    #[inline]
     pub fn spawn<F>(&self, future: F) -> JoinHandle<F::Output>
     where
         F: Future + Send + 'static,
@@ -329,6 +330,7 @@ impl Handle {
     }
 
     #[track_caller]
+    #[inline]
     pub(crate) fn spawn_named<F>(&self, future: F, meta: SpawnMeta<'_>) -> JoinHandle<F::Output>
     where
         F: Future + Send + 'static,
