@@ -8,6 +8,7 @@ on:
     types:
     - completed
     workflows:
+    - CI
     - Daily Perf Improver
     - Daily Test Coverage Improver
 
