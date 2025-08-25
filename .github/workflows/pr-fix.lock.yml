@@ -48,7 +48,7 @@ jobs:
     permissions:
       actions: read
       checks: read
-      contents: read
+      contents: write
       issues: read
       models: read
       pull-requests: write
