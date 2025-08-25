@@ -120,7 +120,7 @@ async fn map_while_debug_format() {
 
 #[tokio::test]
 async fn map_while_size_hint() {
-    let map_while_stream = stream::iter(vec![1, 2, 3, 4, 5]).map_while(|x| Some(x));
+    let map_while_stream = stream::iter(vec![1, 2, 3, 4, 5]).map_while(Some);
     let (lower, upper) = map_while_stream.size_hint();
     assert_eq!(lower, 0); // Can't know lower bound due to potential early termination
     assert_eq!(upper, Some(5)); // Upper bound is from original stream
@@ -136,7 +136,7 @@ async fn map_while_pending_stream() {
         tx.send(2).unwrap();
         tx.send(3).unwrap();
         tx.send(-1).unwrap(); // This should cause map_while to stop
-        tx.send(5).unwrap();  // This should not be processed
+        tx.send(5).unwrap(); // This should not be processed
         drop(tx); // Close the stream
 
         tokio_stream::wrappers::UnboundedReceiverStream::new(rx)
@@ -155,7 +155,8 @@ async fn map_while_complex_logic() {
     let result: Vec<String> = stream::iter(vec![1, 4, 9, 16, 20, 25])
         .map_while(|x| {
             let sqrt = (x as f64).sqrt();
-            if sqrt.fract() == 0.0 { // Only perfect squares
+            if sqrt.fract() == 0.0 {
+                // Only perfect squares
                 Some(format!("sqrt({x}) = {}", sqrt as i32))
             } else {
                 None
@@ -164,7 +165,10 @@ async fn map_while_complex_logic() {
         .collect()
         .await;
     // Should stop at 20 (not a perfect square)
-    assert_eq!(result, vec!["sqrt(1) = 1", "sqrt(4) = 2", "sqrt(9) = 3", "sqrt(16) = 4"]);
+    assert_eq!(
+        result,
+        vec!["sqrt(1) = 1", "sqrt(4) = 2", "sqrt(9) = 3", "sqrt(16) = 4"]
+    );
 }
 
 #[tokio::test]
@@ -174,7 +178,8 @@ async fn map_while_early_termination() {
     let result: Vec<i32> = stream::iter(vec![2, 4, 6, 7, 8, 10])
         .map_while(|x| {
             processed_count += 1;
-            if x % 2 == 0 { // Even numbers only
+            if x % 2 == 0 {
+                // Even numbers only
                 Some(x / 2)
             } else {
                 None
@@ -182,7 +187,7 @@ async fn map_while_early_termination() {
         })
         .collect()
         .await;
-    
+
     assert_eq!(result, vec![1, 2, 3]); // 2/2, 4/2, 6/2
     assert_eq!(processed_count, 4); // Should process 2, 4, 6, 7 (stops at 7)
 }
@@ -192,7 +197,13 @@ async fn map_while_chaining() {
     // Test chaining map_while operations
     let result: Vec<String> = stream::iter(vec![1, 2, 3, 4, 5, 6])
         .map_while(|x| if x <= 4 { Some(x) } else { None }) // Take first 4: 1,2,3,4
-        .map_while(|x| if x <= 2 { Some(format!("num_{x}")) } else { None }) // Take first 2: 1,2
+        .map_while(|x| {
+            if x <= 2 {
+                Some(format!("num_{x}"))
+            } else {
+                None
+            }
+        }) // Take first 2: 1,2
         .collect()
         .await;
     assert_eq!(result, vec!["num_1", "num_2"]);
