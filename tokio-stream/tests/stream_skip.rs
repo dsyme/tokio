@@ -10,71 +10,47 @@ async fn skip_empty_stream() {
 
 #[tokio::test]
 async fn skip_zero_elements() {
-    let result: Vec<i32> = stream::iter(vec![1, 2, 3, 4, 5])
-        .skip(0)
-        .collect()
-        .await;
+    let result: Vec<i32> = stream::iter(vec![1, 2, 3, 4, 5]).skip(0).collect().await;
     assert_eq!(result, vec![1, 2, 3, 4, 5]);
 }
 
 #[tokio::test]
 async fn skip_some_elements() {
-    let result: Vec<i32> = stream::iter(vec![1, 2, 3, 4, 5])
-        .skip(2)
-        .collect()
-        .await;
+    let result: Vec<i32> = stream::iter(vec![1, 2, 3, 4, 5]).skip(2).collect().await;
     assert_eq!(result, vec![3, 4, 5]);
 }
 
 #[tokio::test]
 async fn skip_all_elements() {
-    let result: Vec<i32> = stream::iter(vec![1, 2, 3, 4, 5])
-        .skip(5)
-        .collect()
-        .await;
+    let result: Vec<i32> = stream::iter(vec![1, 2, 3, 4, 5]).skip(5).collect().await;
     assert!(result.is_empty());
 }
 
 #[tokio::test]
 async fn skip_more_than_stream_length() {
-    let result: Vec<i32> = stream::iter(vec![1, 2, 3])
-        .skip(10)
-        .collect()
-        .await;
+    let result: Vec<i32> = stream::iter(vec![1, 2, 3]).skip(10).collect().await;
     assert!(result.is_empty());
 }
 
 #[tokio::test]
 async fn skip_single_element_stream() {
-    let result: Vec<i32> = stream::iter(vec![42])
-        .skip(1)
-        .collect()
-        .await;
+    let result: Vec<i32> = stream::iter(vec![42]).skip(1).collect().await;
     assert!(result.is_empty());
 
-    let result: Vec<i32> = stream::iter(vec![42])
-        .skip(0)
-        .collect()
-        .await;
+    let result: Vec<i32> = stream::iter(vec![42]).skip(0).collect().await;
     assert_eq!(result, vec![42]);
 }
 
 #[tokio::test]
 async fn skip_first_element_only() {
-    let result: Vec<i32> = stream::iter(vec![1, 2, 3, 4, 5])
-        .skip(1)
-        .collect()
-        .await;
+    let result: Vec<i32> = stream::iter(vec![1, 2, 3, 4, 5]).skip(1).collect().await;
     assert_eq!(result, vec![2, 3, 4, 5]);
 }
 
 #[tokio::test]
 async fn skip_large_number_of_elements() {
     let input: Vec<i32> = (0..100).collect();
-    let result: Vec<i32> = stream::iter(input.clone())
-        .skip(90)
-        .collect()
-        .await;
+    let result: Vec<i32> = stream::iter(input.clone()).skip(90).collect().await;
     assert_eq!(result, vec![90, 91, 92, 93, 94, 95, 96, 97, 98, 99]);
 }
 
@@ -118,13 +94,13 @@ async fn skip_size_hint_unknown_upper_bound() {
     tx.send(2).unwrap();
     tx.send(3).unwrap();
     drop(tx);
-    
+
     let original_stream = tokio_stream::wrappers::UnboundedReceiverStream::new(rx);
     let (orig_lower, orig_upper) = original_stream.size_hint();
-    
+
     let skip_stream = original_stream.skip(1);
     let (lower, upper) = skip_stream.size_hint();
-    
+
     // The lower bound should be the original lower bound minus skip amount (saturating)
     assert_eq!(lower, orig_lower.saturating_sub(1));
     // The upper bound should follow the same pattern
@@ -199,41 +175,32 @@ async fn skip_different_types() {
     .skip(1)
     .collect()
     .await;
-    
-    assert_eq!(result, vec![
-        (2, "two".to_string()),
-        (3, "three".to_string()),
-        (4, "four".to_string()),
-    ]);
+
+    assert_eq!(
+        result,
+        vec![
+            (2, "two".to_string()),
+            (3, "three".to_string()),
+            (4, "four".to_string()),
+        ]
+    );
 }
 
 #[tokio::test]
 async fn skip_pagination_pattern() {
     // Common pagination pattern
     let data: Vec<i32> = (1..=20).collect();
-    
+
     // Page 1: skip 0, take 5
-    let page1: Vec<i32> = stream::iter(data.clone())
-        .skip(0)
-        .take(5)
-        .collect()
-        .await;
+    let page1: Vec<i32> = stream::iter(data.clone()).skip(0).take(5).collect().await;
     assert_eq!(page1, vec![1, 2, 3, 4, 5]);
-    
-    // Page 2: skip 5, take 5  
-    let page2: Vec<i32> = stream::iter(data.clone())
-        .skip(5)
-        .take(5)
-        .collect()
-        .await;
+
+    // Page 2: skip 5, take 5
+    let page2: Vec<i32> = stream::iter(data.clone()).skip(5).take(5).collect().await;
     assert_eq!(page2, vec![6, 7, 8, 9, 10]);
-    
+
     // Page 3: skip 10, take 5
-    let page3: Vec<i32> = stream::iter(data.clone())
-        .skip(10)
-        .take(5)
-        .collect()
-        .await;
+    let page3: Vec<i32> = stream::iter(data.clone()).skip(10).take(5).collect().await;
     assert_eq!(page3, vec![11, 12, 13, 14, 15]);
 }
 
@@ -262,10 +229,7 @@ async fn skip_and_map() {
 #[tokio::test]
 async fn skip_very_large_number() {
     // Test with very large skip value (edge case for usize)
-    let result: Vec<i32> = stream::iter(vec![1, 2, 3])
-        .skip(usize::MAX)
-        .collect()
-        .await;
+    let result: Vec<i32> = stream::iter(vec![1, 2, 3]).skip(usize::MAX).collect().await;
     assert!(result.is_empty());
 }
 
@@ -276,23 +240,20 @@ async fn skip_and_size_hint_complex() {
     let (lower1, upper1) = stream1.size_hint();
     assert_eq!(lower1, 7);
     assert_eq!(upper1, Some(7));
-    
+
     let stream2 = stream::iter(0..5).skip(10); // Should be 0 elements
     let (lower2, upper2) = stream2.size_hint();
     assert_eq!(lower2, 0);
     assert_eq!(upper2, Some(0));
 }
 
-#[tokio::test] 
+#[tokio::test]
 async fn skip_consistent_with_iterator() {
     // Verify skip behaves consistently with std::iter::Iterator::skip
     let vec_data = vec![10, 20, 30, 40, 50];
-    
+
     let iterator_result: Vec<i32> = vec_data.iter().copied().skip(2).collect();
-    let stream_result: Vec<i32> = stream::iter(vec_data)
-        .skip(2)
-        .collect()
-        .await;
-    
+    let stream_result: Vec<i32> = stream::iter(vec_data).skip(2).collect().await;
+
     assert_eq!(iterator_result, stream_result);
 }
