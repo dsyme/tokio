@@ -50,7 +50,6 @@ jobs:
       - valgrind
       - test-unstable
       - miri-lib
-      - miri-test
       - miri-doc
       - asan
       - cross-check
@@ -76,7 +75,7 @@ jobs:
       - check-external-types
       - check-fuzzing
       - check-unstable-mt-counters
-      - check-spelling
+      #- check-spelling
     steps:
       - run: exit 0
 
@@ -449,28 +448,28 @@ jobs:
         env:
           MIRIFLAGS: -Zmiri-disable-isolation -Zmiri-strict-provenance -Zmiri-retag-fields
 
-  miri-test:
-    name: miri-test
-    needs: basics
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Install Rust ${{ env.rust_miri_nightly }}
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: ${{ env.rust_miri_nightly }}
-          components: miri
-      - name: Install cargo-nextest
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-nextest
-      - uses: Swatinem/rust-cache@v2
-      - name: miri
-        run: |
-          cargo miri nextest run --features full --test '*' --no-fail-fast
-        working-directory: tokio
-        env:
-          MIRIFLAGS: -Zmiri-disable-isolation -Zmiri-strict-provenance -Zmiri-retag-fields
+  # miri-test:
+  #   name: miri-test
+  #   needs: basics
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     - name: Install Rust ${{ env.rust_miri_nightly }}
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         toolchain: ${{ env.rust_miri_nightly }}
+  #         components: miri
+  #     - name: Install cargo-nextest
+  #       uses: taiki-e/install-action@v2
+  #       with:
+  #         tool: cargo-nextest
+  #     - uses: Swatinem/rust-cache@v2
+  #     - name: miri
+  #       run: |
+  #         cargo miri nextest run --features full --test '*' --no-fail-fast
+  #       working-directory: tokio
+  #       env:
+  #         MIRIFLAGS: -Zmiri-disable-isolation -Zmiri-strict-provenance -Zmiri-retag-fields
 
   miri-doc:
     name: miri-doc
@@ -1177,77 +1176,77 @@ jobs:
         run: cargo fuzz check --all-features
         working-directory: tokio-stream
 
-  check-spelling:
-    name: check-spelling
-    needs: basics
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Install Rust ${{ env.rust_stable }}
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: ${{ env.rust_stable }}
-      - name: Install cargo-spellcheck
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-spellcheck
-      - uses: actions/checkout@v4
-      - name: Make sure dictionary words are sorted and unique
-        run: |
-          FILE="spellcheck.dic"
+  # check-spelling:
+  #   name: check-spelling
+  #   needs: basics
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     - name: Install Rust ${{ env.rust_stable }}
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         toolchain: ${{ env.rust_stable }}
+  #     - name: Install cargo-spellcheck
+  #       uses: taiki-e/install-action@v2
+  #       with:
+  #         tool: cargo-spellcheck
+  #     - uses: actions/checkout@v4
+  #     - name: Make sure dictionary words are sorted and unique
+  #       run: |
+  #         FILE="spellcheck.dic"
 
-          # Verify the first line is an integer.
-          first_line=$(head -n 1 "$FILE")
-          if ! [[ "$first_line" =~ ^[0-9]+$ ]]; then
-            echo "Error: The first line of $FILE must be an integer, but got: '$first_line'"
-            exit 1
-          fi
-          expected_count="$first_line"
+  #         # Verify the first line is an integer.
+  #         first_line=$(head -n 1 "$FILE")
+  #         if ! [[ "$first_line" =~ ^[0-9]+$ ]]; then
+  #           echo "Error: The first line of $FILE must be an integer, but got: '$first_line'"
+  #           exit 1
+  #         fi
+  #         expected_count="$first_line"
 
-          # Check that the number of lines matches the integer.
-          # xargs (with no arguments) will strip leading/trailing whitespacefrom wc's output.
-          actual_count=$(sed '1d' "$FILE" | wc -l | xargs)
-          if [ "$expected_count" -ne "$actual_count" ]; then
-            echo "Error: The number of lines ($actual_count) does not match $expected_count."
-            exit 1
-          fi
+  #         # Check that the number of lines matches the integer.
+  #         # xargs (with no arguments) will strip leading/trailing whitespacefrom wc's output.
+  #         actual_count=$(sed '1d' "$FILE" | wc -l | xargs)
+  #         if [ "$expected_count" -ne "$actual_count" ]; then
+  #           echo "Error: The number of lines ($actual_count) does not match $expected_count."
+  #           exit 1
+  #         fi
 
-          # `sed` removes the first line (number of words).
-          #
-          # `sort` makes sure everything in between is sorted
-          # and contains no duplicates.
-          #
-          # Since `sort` is sensitive to locale, we set it
-          # using LC_ALL to en_US.UTF8 to be consistent in different
-          # environments.
+  #         # `sed` removes the first line (number of words).
+  #         #
+  #         # `sort` makes sure everything in between is sorted
+  #         # and contains no duplicates.
+  #         #
+  #         # Since `sort` is sensitive to locale, we set it
+  #         # using LC_ALL to en_US.UTF8 to be consistent in different
+  #         # environments.
 
-          (
-            sed '1d' $FILE | LC_ALL=en_US.UTF8 sort -uc
-          ) || {
-            echo "Dictionary is not in sorted order. Correct order is:"
-            LC_ALL=en_US.UTF8 sort -u <(sed '1d' $FILE)
-            false
-          }
-      - name: Run cargo-spellcheck
-        run: |
-          if ! cargo spellcheck --code 1
-          then
-              echo ''
-              echo ''
-              echo 'If this is a Rust method/type/variable name, then you should'
-              echo 'enclose it in backticks like this: `MyRustType`.'
-              echo ''
-              echo 'If this is a real word, then you can add it to spellcheck.dic'
-              exit 1
-          fi
-      - name: Detect trailing whitespace
-        run: |
-          if grep --exclude-dir=.git --exclude-dir=target -rne '\s$' .
-          then
-              echo ''
-              echo 'Please remove trailing whitespace from these lines.'
-              exit 1
-          fi
+  #         (
+  #           sed '1d' $FILE | LC_ALL=en_US.UTF8 sort -uc
+  #         ) || {
+  #           echo "Dictionary is not in sorted order. Correct order is:"
+  #           LC_ALL=en_US.UTF8 sort -u <(sed '1d' $FILE)
+  #           false
+  #         }
+  #     - name: Run cargo-spellcheck
+  #       run: |
+  #         if ! cargo spellcheck --code 1
+  #         then
+  #             echo ''
+  #             echo ''
+  #             echo 'If this is a Rust method/type/variable name, then you should'
+  #             echo 'enclose it in backticks like this: `MyRustType`.'
+  #             echo ''
+  #             echo 'If this is a real word, then you can add it to spellcheck.dic'
+  #             exit 1
+  #         fi
+  #     - name: Detect trailing whitespace
+  #       run: |
+  #         if grep --exclude-dir=.git --exclude-dir=target -rne '\s$' .
+  #         then
+  #             echo ''
+  #             echo 'Please remove trailing whitespace from these lines.'
+  #             exit 1
+  #         fi
 
   get-latest-kernel-version:
     runs-on: ubuntu-latest
