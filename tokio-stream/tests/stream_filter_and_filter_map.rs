@@ -52,7 +52,7 @@ async fn filter_with_mutation() {
 #[tokio::test]
 async fn filter_debug_format() {
     let filter_stream = stream::iter(vec![1, 2, 3]).filter(|&x| x > 0);
-    let debug_str = format!("{:?}", filter_stream);
+    let debug_str = format!("{filter_stream:?}");
     assert!(debug_str.contains("Filter"));
 }
 
@@ -137,7 +137,7 @@ async fn filter_map_type_conversion() {
     let result: Vec<String> = stream::iter(vec![1, 2, 3, 4, 5])
         .filter_map(|x| {
             if x % 2 == 0 {
-                Some(format!("even{}", x))
+                Some(format!("even{x}"))
             } else {
                 None
             }
@@ -177,7 +177,7 @@ async fn filter_map_with_mutation() {
 #[tokio::test]
 async fn filter_map_debug_format() {
     let filter_map_stream = stream::iter(vec![1, 2, 3]).filter_map(|x| Some(x * 2));
-    let debug_str = format!("{:?}", filter_map_stream);
+    let debug_str = format!("{filter_map_stream:?}");
     assert!(debug_str.contains("FilterMap"));
 }
 
@@ -240,7 +240,7 @@ async fn filter_map_chaining() {
         .filter_map(|x| if x % 2 == 0 { Some(x) } else { None }) // Even: 2, 4, 6
         .filter_map(|x| {
             if x > 3 {
-                Some(format!("num_{}", x))
+                Some(format!("num_{x}"))
             } else {
                 None
             }
@@ -257,7 +257,7 @@ async fn filter_and_filter_map_combination() {
         .filter(|&x| x > 0) // Positive: 1, 2, 3, 4, 5
         .filter_map(|x| {
             if x % 2 == 1 {
-                Some(format!("odd_{}", x))
+                Some(format!("odd_{x}"))
             } else {
                 None
             }
