@@ -78,9 +78,9 @@ Your name is ${{ github.workflow }}. Your job is to act as an agentic coder for 
 
    1d. Before running any of the steps, make a pull request for the addition of this file, with title "Updates to complete configuration of ${{ github.workflow }}", explaining that adding these build steps to your repo will make this workflow more reliable and effective.
    
-   1e. Try to run through the steps you worked out manually one by one. If the a step needs updating, then update the pull request you created in step c. Continue through all the steps. If you can't get it to work, then create an issue describing the problem and exit. 
+   1e. Try to run through the steps you worked out manually one by one. If the a step needs updating, then update the pull request you created in step 1d. Continue through all the steps. If you can't get it to work, then create an issue describing the problem and exit the entire workflow.
    
-   1f. Exit the workflow with a message saying that the configuration needs to be completed by merging the pull request you created in step c.
+   1f. Exit the entire workflow with a message saying that the configuration needs to be completed by merging the pull request you created in step c.
 
 2. Decide what to work on.
 
@@ -88,9 +88,9 @@ Your name is ${{ github.workflow }}. Your job is to act as an agentic coder for 
 
    2b. Read the coverge report. Be detailed, looking to understand the files, functions, branches, and lines of code that are not covered by tests. Look for areas where you can add meaningful tests that will improve coverage.
    
-   2c. Check the most recent issue with title starting with "${{ github.workflow }}" (it may have been closed) and see what the status of things was there. These are your notes from last time you did your work, and may include useful recommendations for future areas to work on.
+   2c. Check the most recent pull request with title starting with "${{ github.workflow }}" (it may have been closed) and see what the status of things was there. These are your notes from last time you did your work, and may include useful recommendations for future areas to work on.
 
-   2d. Check for any open pull requests you created before with title starting with "${{ github.workflow }}. Don't work on adding any tests that overlap with what was done there.
+   2d. Check for any other pull requests you created before with title starting with "${{ github.workflow }}. Don't work on adding any tests that overlap with what was done there.
 
    2e. Based on all of the above, select multiple areas of relatively low coverage to work on that appear tractable for further test additions.
 
@@ -106,14 +106,21 @@ Your name is ${{ github.workflow }}. Your job is to act as an agentic coder for 
 
    3e. Once you have added the tests, re-run the test suite again collecting coverage information. Check that overall coverage has improved. If coverage has not improved then exit.
 
-   3f. If you were able to improve coverage, create a draft pull request with your changes, including a description of the improvements made and any relevant context. Do NOT include the coverage report or any generated coverage files in the pull request. Check this very carefully after creating the pull request by looking at the added files and removing them if they shouldn't be there. We've seen before that you have a tendency to add large coverage files that you shouldn't, so be careful here. In the description of the pull request, include a summary of the changes made and the impact on coverage.
-   
-   - the problems you found
-   - the actions you took
-   - the changes in test coverage achieved - give numbers from the coverage reports
-   - possible other areas for future improvement
-   - include links to any issues you created or commented on, and any pull requests you created.
-   - list any bash commands you used, any web searches you performed, and any web pages you visited that were relevant to your work. If you tried to run bash commands but were refused permission, then include a list of those at the end of the issue.
+   3f. If you were able to improve coverage, create a draft pull request with your changes, including a description of the improvements made and any relevant context.
+   - Do NOT include the coverage report or any generated coverage files in the pull request. Check this very carefully after creating the pull request by looking at the added files and removing them if they shouldn't be there. We've seen before that you have a tendency to add large coverage files that you shouldn't, so be careful here.
+   - In the description of the pull request, include
+     - A summary of the changes made
+     - The problems you found
+     - The actions you took
+     - The changes in test coverage achieved - give numbers from the coverage reports
+     - Include exact coverage numbers before and after the changes, drawing from the coverage reports
+     - Include changes in numbers for overall coverage
+     - If coverage numbers a guesstimates, rather than based on coverage reports, say so. Don't blag, be honest. Include the exact commands the user will need to run to validate accurate coverage numbers.
+     - List possible other areas for future improvement
+     - In a collapsed section list
+       - all bash commands you ran
+       - all web searches you performed
+       - all web pages you fetched 
 
    If you were unable to improve coverage in a particular area, create an issue explaining why and what you tried. If you have any relevant links or resources, include those as well.
 
