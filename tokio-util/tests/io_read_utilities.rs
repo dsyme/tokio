@@ -14,7 +14,7 @@ use tokio_util::io::{read_buf, read_exact_arc};
 struct MockReader {
     data: Vec<u8>,
     position: usize,
-    read_size: Option<usize>, // If set, limits read size per call
+    read_size: Option<usize>,     // If set, limits read size per call
     error_on_read: Option<usize>, // If set, returns error after N reads
     reads_count: usize,
 }
@@ -52,10 +52,7 @@ impl AsyncRead for MockReader {
         // Check if we should error
         if let Some(error_after) = self.error_on_read {
             if self.reads_count > error_after {
-                return Poll::Ready(Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "Mock error"
-                )));
+                return Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, "Mock error")));
             }
         }
 
@@ -84,7 +81,7 @@ async fn test_read_buf_basic() {
     let mut buf = BytesMut::new();
 
     let n = assert_ok!(read_buf(&mut reader, &mut buf).await);
-    
+
     assert_eq!(n, 5);
     assert_eq!(&buf[..], &data[..]);
 }
@@ -95,7 +92,7 @@ async fn test_read_buf_empty_reader() {
     let mut buf = BytesMut::new();
 
     let n = assert_ok!(read_buf(&mut reader, &mut buf).await);
-    
+
     assert_eq!(n, 0);
     assert_eq!(buf.len(), 0);
 }
@@ -157,7 +154,7 @@ async fn test_read_buf_large_data() {
         }
         total_read += n;
     }
-    
+
     assert_eq!(total_read, 10000);
     assert_eq!(&buf[..], &data[..]);
 }
@@ -186,7 +183,7 @@ async fn test_read_buf_incremental_growth() {
 async fn test_read_buf_different_buffer_types() {
     let data = vec![10, 20, 30, 40];
     let mut reader = MockReader::new(data.clone());
-    
+
     // Test with Vec<u8>
     let mut vec_buf = Vec::new();
     let n = assert_ok!(read_buf(&mut reader, &mut vec_buf).await);
@@ -201,7 +198,7 @@ async fn test_read_exact_arc_basic() {
     let reader = MockReader::new(data.clone());
 
     let arc = assert_ok!(read_exact_arc(reader, 5).await);
-    
+
     assert_eq!(&arc[..], &data[..]);
     // Verify it's actually an Arc by checking reference count behavior
     let arc2 = Arc::clone(&arc);
@@ -211,9 +208,9 @@ async fn test_read_exact_arc_basic() {
 #[tokio::test]
 async fn test_read_exact_arc_empty() {
     let reader = MockReader::new(vec![]);
-    
+
     let arc = assert_ok!(read_exact_arc(reader, 0).await);
-    
+
     assert_eq!(arc.len(), 0);
 }
 
@@ -223,7 +220,7 @@ async fn test_read_exact_arc_partial_reads() {
     let reader = MockReader::new(data.clone()).with_read_size(2);
 
     let arc = assert_ok!(read_exact_arc(reader, 6).await);
-    
+
     assert_eq!(&arc[..], &data[..]);
 }
 
@@ -233,7 +230,7 @@ async fn test_read_exact_arc_insufficient_data() {
     let reader = MockReader::new(data);
 
     let result = read_exact_arc(reader, 5).await;
-    
+
     assert!(result.is_err());
     let err = result.unwrap_err();
     assert_eq!(err.kind(), io::ErrorKind::UnexpectedEof);
@@ -246,7 +243,7 @@ async fn test_read_exact_arc_exact_match() {
     let reader = MockReader::new(data.clone());
 
     let arc = assert_ok!(read_exact_arc(reader, 100).await);
-    
+
     assert_eq!(arc.len(), 100);
     assert_eq!(&arc[..], &data[..]);
 }
@@ -257,7 +254,7 @@ async fn test_read_exact_arc_large_data() {
     let reader = MockReader::new(data.clone());
 
     let arc = assert_ok!(read_exact_arc(reader, 10000).await);
-    
+
     assert_eq!(arc.len(), 10000);
     assert_eq!(&arc[..], &data[..]);
 }
@@ -268,7 +265,7 @@ async fn test_read_exact_arc_single_byte() {
     let reader = MockReader::new(data.clone());
 
     let arc = assert_ok!(read_exact_arc(reader, 1).await);
-    
+
     assert_eq!(arc.len(), 1);
     assert_eq!(arc[0], 255);
 }
@@ -277,10 +274,12 @@ async fn test_read_exact_arc_single_byte() {
 async fn test_read_exact_arc_with_io_error() {
     let data = vec![1, 2, 3];
     // Force multiple reads by limiting read size, then error on second read
-    let reader = MockReader::new(data).with_read_size(2).with_error_after_reads(1);
+    let reader = MockReader::new(data)
+        .with_read_size(2)
+        .with_error_after_reads(1);
 
     let result = read_exact_arc(reader, 5).await;
-    
+
     assert!(result.is_err());
     let err = result.unwrap_err();
     assert_eq!(err.kind(), io::ErrorKind::Other);
@@ -293,7 +292,7 @@ async fn test_read_exact_arc_multiple_chunks() {
     let reader = MockReader::new(data.clone()).with_read_size(3);
 
     let arc = assert_ok!(read_exact_arc(reader, 10).await);
-    
+
     assert_eq!(&arc[..], &data[..]);
 }
 
@@ -302,16 +301,16 @@ async fn test_read_exact_arc_multiple_chunks() {
 async fn test_read_buf_then_read_exact_arc() {
     let data1 = vec![1, 2, 3];
     let data2 = vec![4, 5, 6, 7, 8];
-    
+
     let mut reader1 = MockReader::new(data1.clone());
     let reader2 = MockReader::new(data2.clone());
-    
+
     // First use read_buf
     let mut buf = BytesMut::new();
     let n = assert_ok!(read_buf(&mut reader1, &mut buf).await);
     assert_eq!(n, 3);
     assert_eq!(&buf[..], &data1[..]);
-    
+
     // Then use read_exact_arc
     let arc = assert_ok!(read_exact_arc(reader2, 5).await);
     assert_eq!(&arc[..], &data2[..]);
@@ -322,7 +321,7 @@ async fn test_read_buf_with_real_tokio_readers() {
     // Test with tokio::io::repeat
     let mut repeat_reader = tokio::io::repeat(42);
     let mut buf = BytesMut::new();
-    
+
     let n = assert_ok!(read_buf(&mut repeat_reader, &mut buf).await);
     assert!(n > 0);
     assert!(buf.iter().all(|&b| b == 42));
@@ -332,7 +331,7 @@ async fn test_read_buf_with_real_tokio_readers() {
 async fn test_read_exact_arc_with_real_tokio_readers() {
     // Test with tokio::io::repeat
     let repeat_reader = tokio::io::repeat(123);
-    
+
     let arc = assert_ok!(read_exact_arc(repeat_reader, 50).await);
     assert_eq!(arc.len(), 50);
     assert!(arc.iter().all(|&b| b == 123));
@@ -344,7 +343,7 @@ async fn test_read_buf_with_zero_capacity_buffer() {
     let data = vec![1, 2, 3];
     let mut reader = MockReader::new(data);
     let mut buf = BytesMut::with_capacity(0);
-    
+
     // Buffer will need to grow
     let n = assert_ok!(read_buf(&mut reader, &mut buf).await);
     assert_eq!(n, 3);
@@ -355,11 +354,11 @@ async fn test_read_buf_with_zero_capacity_buffer() {
 async fn test_read_exact_arc_boundary_values() {
     // Test with various sizes including powers of 2
     let sizes = vec![1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024];
-    
+
     for size in sizes {
         let data = vec![size as u8; size];
         let reader = MockReader::new(data.clone());
-        
+
         let arc = assert_ok!(read_exact_arc(reader, size).await);
         assert_eq!(arc.len(), size);
         assert!(arc.iter().all(|&b| b == size as u8));
