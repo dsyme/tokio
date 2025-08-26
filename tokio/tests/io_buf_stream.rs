@@ -385,7 +385,7 @@ async fn debug_formatting() {
     let mock = MockStream::new(b"test".to_vec());
     let buf_stream = BufStream::new(mock);
 
-    let debug_str = format!("{:?}", buf_stream);
+    let debug_str = format!("{buf_stream:?}");
     assert!(debug_str.contains("BufStream"));
 }
 
