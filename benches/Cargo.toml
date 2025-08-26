@@ -96,5 +96,15 @@ name = "time_timeout"
 path = "time_timeout.rs"
 harness = false
 
+[[bench]]
+name = "task_lifecycle"
+path = "task_lifecycle.rs"
+harness = false
+
+[[bench]]
+name = "spawn_scale"
+path = "spawn_scale.rs"
+harness = false
+
 [lints]
 workspace = true
