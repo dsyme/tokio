@@ -217,6 +217,7 @@ pub(super) enum Stage<T: Future> {
 impl<T: Future, S: Schedule> Cell<T, S> {
     /// Allocates a new task cell, containing the header, trailer, and core
     /// structures.
+    #[inline]
     pub(super) fn new(
         future: T,
         scheduler: S,
@@ -225,6 +226,7 @@ impl<T: Future, S: Schedule> Cell<T, S> {
         #[cfg(tokio_unstable)] spawned_at: &'static Location<'static>,
     ) -> Box<Cell<T, S>> {
         // Separated into a non-generic function to reduce LLVM codegen
+        #[inline]
         fn new_header(
             state: State,
             vtable: &'static Vtable,
@@ -527,6 +529,7 @@ impl Header {
 }
 
 impl Trailer {
+    #[inline]
     fn new(hooks: TaskHarnessScheduleHooks) -> Self {
         Trailer {
             waker: UnsafeCell::new(None),
