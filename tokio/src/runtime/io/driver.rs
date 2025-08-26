@@ -152,6 +152,7 @@ impl Driver {
         }
     }
 
+    #[inline]
     fn turn(&mut self, handle: &Handle, max_wait: Option<Duration>) {
         debug_assert!(!handle.registrations.is_shutdown(&handle.synced.lock()));
 
@@ -174,6 +175,20 @@ impl Driver {
 
         // Process all the events that came in, dispatching appropriately
         let mut ready_count = 0;
+        
+        // Use stack-allocated array for common cases (up to 16 events)
+        const BATCH_SIZE: usize = 16;
+        
+        #[derive(Clone, Copy)]
+        struct BatchedIoEvent {
+            io: *const ScheduledIo,
+            ready: Ready,
+        }
+        
+        let mut batched_events: [Option<BatchedIoEvent>; BATCH_SIZE] = [None; BATCH_SIZE];
+        let mut batch_count = 0;
+        let mut overflow_events = Vec::new();
+        
         for event in events.iter() {
             let token = event.token();
 
@@ -192,10 +207,38 @@ impl Driver {
                 let io: &ScheduledIo = unsafe { &*ptr };
 
                 io.set_readiness(Tick::Set, |curr| curr | ready);
-                io.wake(ready);
+                
+                // Batch the I/O event for later wake processing
+                let batched_event = BatchedIoEvent { io, ready };
+                
+                if batch_count < BATCH_SIZE {
+                    batched_events[batch_count] = Some(batched_event);
+                    batch_count += 1;
+                } else {
+                    overflow_events.push(batched_event);
+                }
 
                 ready_count += 1;
             }
+        }
+        
+        // Process batched I/O events - wake in batch for better cache locality
+        #[inline]
+        fn process_batched_wake(batched_event: &BatchedIoEvent) {
+            let io: &ScheduledIo = unsafe { &*batched_event.io };
+            io.wake(batched_event.ready);
+        }
+        
+        // Wake stack-allocated events first
+        for i in 0..batch_count {
+            if let Some(ref batched_event) = batched_events[i] {
+                process_batched_wake(batched_event);
+            }
+        }
+        
+        // Wake any overflow events
+        for batched_event in &overflow_events {
+            process_batched_wake(batched_event);
         }
 
         #[cfg(all(tokio_uring, feature = "rt", feature = "fs", target_os = "linux",))]
