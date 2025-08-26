@@ -27,7 +27,7 @@ async fn take_some_from_single_element() {
     // Taking some elements from a single-element stream
     let result: Vec<i32> = stream::iter(vec![42]).take(1).collect().await;
     assert_eq!(result, vec![42]);
-    
+
     let result: Vec<i32> = stream::iter(vec![42]).take(5).collect().await;
     assert_eq!(result, vec![42]);
 }
@@ -94,14 +94,14 @@ async fn take_size_hint_unbounded_stream() {
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
     tx.send(1).unwrap();
     tx.send(2).unwrap();
-    
+
     let stream = tokio_stream::wrappers::UnboundedReceiverStream::new(rx).take(3);
     let (lower, upper) = stream.size_hint();
     // For unbounded streams with items already in the buffer, lower bound reflects items available
     // The upper bound is limited by the take count
     assert!(lower <= 3);
     assert_eq!(upper, Some(3));
-    
+
     drop(tx); // Close to prevent hanging
 }
 
@@ -109,7 +109,7 @@ async fn take_size_hint_unbounded_stream() {
 async fn take_debug_formatting() {
     // Test Debug trait implementation
     let stream = stream::iter(vec![1, 2, 3]).take(2);
-    let debug_string = format!("{:?}", stream);
+    let debug_string = format!("{stream:?}");
     assert!(debug_string.contains("Take"));
 }
 
@@ -152,7 +152,7 @@ async fn take_chaining_operations() {
 async fn take_with_other_adaptors() {
     // Test take combined with filter
     let result: Vec<i32> = stream::iter(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-        .filter(|&x| x % 2 == 0)  // Even numbers: [2, 4, 6, 8, 10]
+        .filter(|&x| x % 2 == 0) // Even numbers: [2, 4, 6, 8, 10]
         .take(3)
         .collect()
         .await;
@@ -187,30 +187,20 @@ async fn take_complex_data_types() {
 async fn take_pagination_pattern() {
     // Test a common pagination pattern - skip and take
     let data: Vec<i32> = (1..=20).collect();
-    
+
     // Page 1: first 5 items
-    let page1: Vec<i32> = stream::iter(data.clone())
-        .take(5)
-        .collect()
-        .await;
+    let page1: Vec<i32> = stream::iter(data.clone()).take(5).collect().await;
     assert_eq!(page1, vec![1, 2, 3, 4, 5]);
-    
+
     // Page 2: skip 5, take next 5
-    let page2: Vec<i32> = stream::iter(data.clone())
-        .skip(5)
-        .take(5)
-        .collect()
-        .await;
+    let page2: Vec<i32> = stream::iter(data.clone()).skip(5).take(5).collect().await;
     assert_eq!(page2, vec![6, 7, 8, 9, 10]);
 }
 
 #[tokio::test]
 async fn take_edge_case_usize_max() {
     // Test taking usize::MAX elements (edge case)
-    let result: Vec<i32> = stream::iter(vec![1, 2, 3])
-        .take(usize::MAX)
-        .collect()
-        .await;
+    let result: Vec<i32> = stream::iter(vec![1, 2, 3]).take(usize::MAX).collect().await;
     assert_eq!(result, vec![1, 2, 3]);
 }
 
@@ -226,7 +216,7 @@ async fn take_early_termination_stream() {
         .take(3)
         .collect()
         .await;
-    
+
     assert_eq!(result, vec![1, 2, 3]);
     assert_eq!(remaining_calls, 3); // Should only process 3 items
 }
@@ -235,9 +225,9 @@ async fn take_early_termination_stream() {
 async fn take_remaining_counter_behavior() {
     // Test internal remaining counter behavior through repeated polling
     use futures::stream::StreamExt as FuturesStreamExt;
-    
+
     let mut stream = tokio_stream::StreamExt::take(stream::iter(vec![1, 2, 3, 4, 5]), 3);
-    
+
     // Poll items one by one to test remaining counter
     assert_eq!(FuturesStreamExt::next(&mut stream).await, Some(1));
     assert_eq!(FuturesStreamExt::next(&mut stream).await, Some(2));
