@@ -1,10 +1,10 @@
 #![warn(rust_2018_idioms)]
 #![cfg(all(feature = "time", feature = "sync", feature = "io-util"))]
 
-use tokio::time::{self, sleep, Duration, interval};
-use tokio_stream::{StreamExt, Stream};
-use tokio_test::*;
 use std::task::Poll;
+use tokio::time::{self, interval, sleep, Duration};
+use tokio_stream::{Stream, StreamExt};
+use tokio_test::*;
 
 use futures::stream;
 
@@ -16,8 +16,7 @@ fn ms(n: u64) -> Duration {
 async fn empty_stream() {
     time::pause();
 
-    let stream = stream::empty::<i32>()
-        .timeout_repeating(interval(ms(100)));
+    let stream = stream::empty::<i32>().timeout_repeating(interval(ms(100)));
     let mut stream = task::spawn(stream);
 
     assert_ready_eq!(stream.poll_next(), None);
@@ -27,8 +26,7 @@ async fn empty_stream() {
 async fn immediate_items() {
     time::pause();
 
-    let stream = stream::iter(vec![1, 2, 3])
-        .timeout_repeating(interval(ms(100)));
+    let stream = stream::iter(vec![1, 2, 3]).timeout_repeating(interval(ms(100)));
     let mut stream = task::spawn(stream);
 
     assert_ready_eq!(stream.poll_next(), Some(Ok(1)));
@@ -41,8 +39,7 @@ async fn immediate_items() {
 async fn single_item_stream() {
     time::pause();
 
-    let stream = stream::iter(vec![42])
-        .timeout_repeating(interval(ms(100)));
+    let stream = stream::iter(vec![42]).timeout_repeating(interval(ms(100)));
     let mut stream = task::spawn(stream);
 
     assert_ready_eq!(stream.poll_next(), Some(Ok(42)));
@@ -64,7 +61,7 @@ async fn timeout_behavior_basic() {
 
     // Start processing
     assert_pending!(stream.poll_next());
-    
+
     // Should get timeout at some point
     time::advance(ms(100)).await;
     let result = assert_ready!(stream.poll_next());
@@ -104,16 +101,17 @@ async fn multiple_slow_items() {
     let mut errors_received = 0;
 
     // Process stream until completion with more robust timing
-    for _ in 0..50 { // Give plenty of iterations
+    for _ in 0..50 {
+        // Give plenty of iterations
         time::advance(ms(25)).await;
-        
+
         match stream.poll_next() {
             Poll::Ready(Some(Ok(item))) => items_received.push(item),
             Poll::Ready(Some(Err(_))) => errors_received += 1,
             Poll::Ready(None) => break,
             Poll::Pending => continue,
         }
-        
+
         // If we have both items, we can break early
         if items_received.len() == 2 {
             // Let it run a bit more to get to the end
@@ -129,13 +127,15 @@ async fn multiple_slow_items() {
 
     // Should have received both items and some timeout errors
     assert_eq!(items_received, vec![1, 2]);
-    assert!(errors_received > 0, "Should have received some timeout errors");
+    assert!(
+        errors_received > 0,
+        "Should have received some timeout errors"
+    );
 }
 
 #[tokio::test]
 async fn size_hint_behavior() {
-    let stream = stream::iter(vec![1, 2, 3])
-        .timeout_repeating(interval(ms(100)));
+    let stream = stream::iter(vec![1, 2, 3]).timeout_repeating(interval(ms(100)));
 
     let (lower, upper) = stream.size_hint();
     assert_eq!(lower, 3); // From underlying stream
@@ -144,10 +144,9 @@ async fn size_hint_behavior() {
 
 #[tokio::test]
 async fn debug_formatting() {
-    let stream = stream::iter(vec![1, 2, 3])
-        .timeout_repeating(interval(ms(100)));
+    let stream = stream::iter(vec![1, 2, 3]).timeout_repeating(interval(ms(100)));
 
-    let debug_str = format!("{:?}", stream);
+    let debug_str = format!("{stream:?}");
     assert!(debug_str.contains("TimeoutRepeating"));
 }
 
@@ -167,7 +166,7 @@ async fn mixed_fast_and_slow_items() {
 
     // First item should be ready eventually without timeout (allow for timing variations)
     assert_pending!(stream.poll_next());
-    
+
     let mut got_first_item = false;
     for _ in 0..10 {
         time::advance(ms(25)).await;
@@ -180,7 +179,7 @@ async fn mixed_fast_and_slow_items() {
                 // Unexpected timeout, but continue
                 continue;
             }
-            Poll::Ready(other) => panic!("Unexpected result: {:?}", other),
+            Poll::Ready(other) => panic!("Unexpected result: {other:?}"),
             Poll::Pending => continue,
         }
     }
@@ -188,11 +187,12 @@ async fn mixed_fast_and_slow_items() {
 
     // Second item should timeout and then complete
     assert_pending!(stream.poll_next());
-    
+
     let mut got_timeout = false;
     let mut got_item = false;
-    
-    for _ in 0..20 { // Give it many chances
+
+    for _ in 0..20 {
+        // Give it many chances
         time::advance(ms(25)).await;
         match stream.poll_next() {
             Poll::Ready(Some(Ok(2))) => {
@@ -230,17 +230,13 @@ async fn chaining_with_filter_map() {
             x
         })
         .timeout_repeating(interval(ms(100)))
-        .filter_map(|result| {
-            match result {
-                Ok(val) => Some(val),
-                Err(_) => None, // Filter out timeout errors
-            }
-        });
+        .filter_map(|result| result.ok());
     let mut stream = task::spawn(stream);
 
     // Should eventually get all three items, filtering out timeouts
     let mut items = Vec::new();
-    for _ in 0..100 { // Give it many chances
+    for _ in 0..100 {
+        // Give it many chances
         time::advance(ms(10)).await;
         match stream.poll_next() {
             Poll::Ready(Some(item)) => items.push(item),
@@ -261,12 +257,11 @@ async fn timeout_with_pending_stream() {
     time::pause();
 
     // Stream that never produces items
-    let stream = stream::pending::<i32>()
-        .timeout_repeating(interval(ms(50)));
+    let stream = stream::pending::<i32>().timeout_repeating(interval(ms(50)));
     let mut stream = task::spawn(stream);
 
     assert_pending!(stream.poll_next());
-    
+
     // Should get timeout errors repeatedly
     let mut timeout_count = 0;
     for _ in 0..5 {
@@ -274,9 +269,9 @@ async fn timeout_with_pending_stream() {
         let result = assert_ready!(stream.poll_next());
         assert!(result.unwrap().is_err());
         timeout_count += 1;
-        
+
         assert_pending!(stream.poll_next());
     }
-    
+
     assert_eq!(timeout_count, 5);
 }

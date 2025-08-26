@@ -2,8 +2,8 @@
 #![cfg(feature = "full")]
 
 use tokio::io::{
-    AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncSeek, AsyncSeekExt, AsyncWrite,
-    AsyncWriteExt, BufReader, BufStream, BufWriter, ReadBuf, SeekFrom,
+    AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncSeek, AsyncSeekExt, AsyncWrite, AsyncWriteExt,
+    BufReader, BufStream, BufWriter, ReadBuf, SeekFrom,
 };
 
 use futures::task::{Context, Poll};
@@ -160,7 +160,11 @@ async fn vectored_write() {
     let mock = MockStream::new(Vec::new());
     let mut buf_stream = BufStream::new(mock);
 
-    let bufs = &[IoSlice::new(b"hello"), IoSlice::new(b" "), IoSlice::new(b"world")];
+    let bufs = &[
+        IoSlice::new(b"hello"),
+        IoSlice::new(b" "),
+        IoSlice::new(b"world"),
+    ];
     assert_ok!(buf_stream.write_vectored(bufs).await);
     assert_ok!(buf_stream.flush().await);
 
@@ -308,7 +312,7 @@ async fn mixed_read_write_operations() {
 
     // Write some data
     assert_ok!(buf_stream.write_all(b" written").await);
-    
+
     // Continue reading
     let mut remaining = String::new();
     assert_ok!(buf_stream.read_to_string(&mut remaining).await);
