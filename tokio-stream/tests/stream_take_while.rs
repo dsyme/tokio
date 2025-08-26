@@ -69,7 +69,7 @@ async fn take_while_call_count_verification() {
         })
         .collect()
         .await;
-    
+
     assert_eq!(result, vec![1, 3, 5]);
     assert_eq!(call_count, 4); // Called for 1, 3, 5, 6 (stops at 6)
 }
@@ -83,11 +83,11 @@ async fn take_while_size_hint_before_done() {
     assert_eq!(upper, Some(3)); // Upper bound matches original stream
 }
 
-#[tokio::test] 
+#[tokio::test]
 async fn take_while_size_hint_after_done() {
     // Test size_hint after stream is exhausted
     let stream = stream::iter(vec![1, 2, 3]).take_while(|x| *x < 2);
-    
+
     // Consume the stream
     let _result: Vec<i32> = stream.collect().await;
     // Note: We can't easily test size_hint after consumption in this pattern
@@ -98,7 +98,7 @@ async fn take_while_size_hint_after_done() {
 async fn take_while_debug_formatting() {
     // Test Debug trait implementation
     let stream = stream::iter(vec![1, 2, 3]).take_while(|x| *x < 3);
-    let debug_str = format!("{:?}", stream);
+    let debug_str = format!("{stream:?}");
     assert!(debug_str.contains("TakeWhile"));
     assert!(debug_str.contains("done"));
 }
@@ -111,7 +111,7 @@ async fn take_while_with_different_types() {
         .take_while(|s| s.starts_with('a'))
         .collect()
         .await;
-    
+
     assert_eq!(result, vec!["apple", "apricot"]);
 }
 
@@ -122,11 +122,11 @@ async fn take_while_complex_predicate() {
     let result: Vec<i32> = stream::iter(numbers)
         .take_while(|x| {
             let sqrt = (*x as f64).sqrt() as i32;
-            sqrt * sqrt == *x && sqrt < 6  // Perfect squares less than 36
+            sqrt * sqrt == *x && sqrt < 6 // Perfect squares less than 36
         })
         .collect()
         .await;
-    
+
     assert_eq!(result, vec![1, 4, 9, 16, 25]);
 }
 
@@ -141,7 +141,7 @@ async fn take_while_closure_mutation() {
         })
         .collect()
         .await;
-    
+
     assert_eq!(result, vec![1, 2, 3]);
     assert_eq!(sum, 10); // 1 + 2 + 3 + 4
 }
@@ -154,7 +154,7 @@ async fn take_while_async_stream() {
 
         // Send items
         tx.send(2).unwrap();
-        tx.send(4).unwrap(); 
+        tx.send(4).unwrap();
         tx.send(6).unwrap();
         tx.send(7).unwrap(); // This should terminate take_while
         tx.send(8).unwrap();
@@ -174,12 +174,12 @@ async fn take_while_async_stream() {
 async fn take_while_chaining_operations() {
     // Test take_while combined with other stream operations
     let result: Vec<i32> = stream::iter(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-        .filter(|x| x % 2 == 0)  // [2, 4, 6, 8, 10]
-        .take_while(|x| *x < 8)  // [2, 4, 6] 
-        .map(|x| x * 2)          // [4, 8, 12]
+        .filter(|x| x % 2 == 0) // [2, 4, 6, 8, 10]
+        .take_while(|x| *x < 8) // [2, 4, 6]
+        .map(|x| x * 2) // [4, 8, 12]
         .collect()
         .await;
-    
+
     assert_eq!(result, vec![4, 8, 12]);
 }
 
@@ -187,18 +187,18 @@ async fn take_while_chaining_operations() {
 async fn take_while_empty_after_take() {
     // Test that once predicate fails, stream stays exhausted
     let mut stream = Box::pin(stream::iter(vec![1, 2, 3, 4, 5]).take_while(|x| *x < 3));
-    
+
     // First poll should give us items 1, 2
     let item1 = stream.as_mut().next().await;
     assert_eq!(item1, Some(1));
-    
+
     let item2 = stream.as_mut().next().await;
     assert_eq!(item2, Some(2));
-    
+
     // Next item (3) fails predicate, so stream should end
     let item3 = stream.as_mut().next().await;
     assert_eq!(item3, None);
-    
+
     // Subsequent polls should continue to return None
     let item4 = stream.as_mut().next().await;
     assert_eq!(item4, None);
@@ -212,7 +212,7 @@ async fn take_while_large_stream() {
         .take_while(|x| *x < 100)
         .collect()
         .await;
-    
+
     assert_eq!(result.len(), 100);
     assert_eq!(result, (0..100).collect::<Vec<_>>());
 }
@@ -225,7 +225,7 @@ async fn take_while_with_option_unwrapping() {
         .take_while(|opt| opt.is_some())
         .collect()
         .await;
-    
+
     assert_eq!(result, vec![Some(1), Some(2), Some(3)]);
 }
 
@@ -236,7 +236,7 @@ async fn take_while_early_stream_end() {
         .take_while(|x| *x < 100) // Predicate never fails
         .collect()
         .await;
-    
+
     assert_eq!(result, vec![2, 4, 6]);
 }
 
@@ -247,7 +247,7 @@ async fn take_while_zero_elements() {
         .take_while(|x| *x < 5)
         .collect()
         .await;
-    
+
     assert!(result.is_empty());
 }
 
@@ -255,10 +255,10 @@ async fn take_while_zero_elements() {
 async fn take_while_multiple_chained() {
     // Test multiple take_while operations chained together
     let result: Vec<i32> = stream::iter(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-        .take_while(|x| *x <= 7)    // [1, 2, 3, 4, 5, 6, 7]
-        .take_while(|x| *x != 4)    // [1, 2, 3]
+        .take_while(|x| *x <= 7) // [1, 2, 3, 4, 5, 6, 7]
+        .take_while(|x| *x != 4) // [1, 2, 3]
         .collect()
         .await;
-    
+
     assert_eq!(result, vec![1, 2, 3]);
 }
