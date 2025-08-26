@@ -278,7 +278,7 @@ async fn read_f32_big_endian() {
     let mut reader = MockReader::new(vec![0x40, 0x49, 0x0F, 0xDC]);
 
     let value = assert_ok!(reader.read_f32().await);
-    assert!((value - 3.141_592_7).abs() < 0.0001);
+    assert!((value - std::f32::consts::PI).abs() < 0.0001);
 }
 
 #[tokio::test]
@@ -287,7 +287,7 @@ async fn read_f32_little_endian() {
     let mut reader = MockReader::new(vec![0xDC, 0x0F, 0x49, 0x40]);
 
     let value = assert_ok!(reader.read_f32_le().await);
-    assert!((value - 3.141_592_7).abs() < 0.0001);
+    assert!((value - std::f32::consts::PI).abs() < 0.0001);
 }
 
 #[tokio::test]
@@ -437,7 +437,7 @@ async fn read_mixed_types() {
     assert_eq!(assert_ok!(reader.read_u32_le().await), 0x12345678);
 
     let f_value = assert_ok!(reader.read_f32().await);
-    assert!((f_value - 3.141_592_7).abs() < 0.0001);
+    assert!((f_value - std::f32::consts::PI).abs() < 0.0001);
 }
 
 // Edge case: Zero values
