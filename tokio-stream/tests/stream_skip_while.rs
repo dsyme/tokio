@@ -4,30 +4,21 @@ use tokio_test::{assert_ready, task};
 #[tokio::test]
 async fn skip_while_empty_stream() {
     // Empty stream should remain empty regardless of predicate
-    let result: Vec<i32> = stream::empty::<i32>()
-        .skip_while(|_| true)
-        .collect()
-        .await;
+    let result: Vec<i32> = stream::empty::<i32>().skip_while(|_| true).collect().await;
     assert_eq!(result, vec![]);
 }
 
 #[tokio::test]
 async fn skip_while_single_element_skip() {
     // Single element that should be skipped
-    let result: Vec<i32> = stream::iter(vec![1])
-        .skip_while(|x| *x > 0)
-        .collect()
-        .await;
+    let result: Vec<i32> = stream::iter(vec![1]).skip_while(|x| *x > 0).collect().await;
     assert_eq!(result, vec![]);
 }
 
 #[tokio::test]
 async fn skip_while_single_element_keep() {
     // Single element that should not be skipped
-    let result: Vec<i32> = stream::iter(vec![1])
-        .skip_while(|x| *x < 0)
-        .collect()
-        .await;
+    let result: Vec<i32> = stream::iter(vec![1]).skip_while(|x| *x < 0).collect().await;
     assert_eq!(result, vec![1]);
 }
 
@@ -80,7 +71,7 @@ async fn skip_while_early_termination() {
 async fn skip_while_size_hints() {
     let stream = stream::iter(vec![1, 2, 3, 4, 5]);
     let skip_while_stream = stream.skip_while(|x| *x <= 2);
-    
+
     // Before any polling, size hint should be (0, Some(5))
     assert_eq!(skip_while_stream.size_hint(), (0, Some(5)));
 }
@@ -89,11 +80,11 @@ async fn skip_while_size_hints() {
 async fn skip_while_size_hints_after_transition() {
     let stream = stream::iter(vec![1, 2, 3, 4, 5]);
     let mut skip_while_stream = stream.skip_while(|x| *x <= 2);
-    
+
     // Poll once to get past the skipping phase
     let first = skip_while_stream.next().await;
     assert_eq!(first, Some(3));
-    
+
     // After transition, size hint should reflect remaining elements
     // This tests the "predicate is None" path in size_hint
     assert_eq!(skip_while_stream.size_hint(), (2, Some(2)));
@@ -103,9 +94,9 @@ async fn skip_while_size_hints_after_transition() {
 async fn skip_while_debug_formatting() {
     let stream = stream::iter(vec![1, 2, 3]);
     let skip_while_stream = stream.skip_while(|x| *x < 3);
-    
+
     // Test Debug implementation
-    let debug_output = format!("{:?}", skip_while_stream);
+    let debug_output = format!("{skip_while_stream:?}");
     assert!(debug_output.contains("SkipWhile"));
     assert!(debug_output.contains("stream"));
 }
@@ -133,12 +124,15 @@ async fn skip_while_with_complex_predicate() {
     .skip_while(|(num, text)| *num < 5 && text.len() < 6)
     .collect()
     .await;
-    
-    assert_eq!(result, vec![
-        (10, "large".to_string()),
-        (3, "medium".to_string()),
-        (20, "huge".to_string()),
-    ]);
+
+    assert_eq!(
+        result,
+        vec![
+            (10, "large".to_string()),
+            (3, "medium".to_string()),
+            (20, "huge".to_string()),
+        ]
+    );
 }
 
 #[tokio::test]
@@ -168,8 +162,8 @@ async fn skip_while_pending_stream() {
 async fn skip_while_chaining() {
     // Test chaining multiple skip_while operations
     let result: Vec<i32> = stream::iter(vec![1, 2, 3, 4, 5, 6, 7, 8])
-        .skip_while(|x| *x <= 3)  // Skip 1, 2, 3
-        .skip_while(|x| *x <= 5)  // Skip 4, 5 from remaining
+        .skip_while(|x| *x <= 3) // Skip 1, 2, 3
+        .skip_while(|x| *x <= 5) // Skip 4, 5 from remaining
         .collect()
         .await;
     assert_eq!(result, vec![6, 7, 8]);
@@ -234,7 +228,7 @@ async fn skip_while_large_stream() {
         .skip_while(|x| *x <= 950)
         .collect()
         .await;
-    
+
     let expected: Vec<i32> = (951..=1000).collect();
     assert_eq!(result, expected);
     assert_eq!(result.len(), 50);
@@ -254,13 +248,8 @@ async fn skip_while_option_parsing() {
 #[tokio::test]
 async fn skip_while_result_parsing() {
     // Real-world example: skip errors until we get Ok
-    let data: Vec<Result<i32, &str>> = vec![
-        Err("error1"),
-        Err("error2"), 
-        Ok(42),
-        Ok(100),
-        Err("error3"),
-    ];
+    let data: Vec<Result<i32, &str>> =
+        vec![Err("error1"), Err("error2"), Ok(42), Ok(100), Err("error3")];
     let result: Vec<Result<i32, &str>> = stream::iter(data)
         .skip_while(|res| res.is_err())
         .collect()
@@ -273,10 +262,10 @@ async fn skip_while_state_consistency() {
     // Test that state is properly maintained between polls
     let stream = stream::iter(vec![1, 2, 3, 4, 5]);
     let mut skip_while_stream = stream.skip_while(|x| *x <= 2);
-    
+
     // First poll should skip 1, 2 and return 3
     assert_eq!(skip_while_stream.next().await, Some(3));
-    
+
     // Subsequent polls should not apply predicate
     assert_eq!(skip_while_stream.next().await, Some(4));
     assert_eq!(skip_while_stream.next().await, Some(5));
